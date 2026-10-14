@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Route Story chapters (bookmark times are not visit dates)",
+  "type": "array",
+  "maxItems": 64,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "id",
+      "title",
+      "text",
+      "anchor",
+      "mood",
+      "source"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+      },
+      "title": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ru",
+          "en"
+        ],
+        "properties": {
+          "ru": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 72
+          },
+          "en": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 72
+          }
+        }
+      },
+      "text": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ru",
+          "en"
+        ],
+        "properties": {
+          "ru": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "en": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      },
+      "source": {
+        "const": "traveler"
+      },
+      "mood": {
+        "enum": [
+          "cold",
+          "heat",
+          "rain",
+          "altitude",
+          "warmth",
+          "neutral"
+        ]
+      },
+      "finale": {
+        "type": "boolean"
+      },
+      "anchor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "countries"
+        ],
+        "properties": {
+          "countries": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            }
+          },
+          "markedAt": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to"
+            ],
+            "description": "Epoch ms of bookmark creation; from <= to, NOT travel dates.",
+            "properties": {
+              "from": {
+                "type": "number"
+              },
+              "to": {
+                "type": "number"
+              }
+            }
+          },
+          "region": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "bbox"
+            ],
+            "description": "Regional extent [west,south,east,north], not an overnight point. Country match still required.",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bbox": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

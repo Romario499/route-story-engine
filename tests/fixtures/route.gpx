@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" creator="OsmAnd" version="1.1">
+  <rte>
+    <name>Батуми — Тбилиси (план)</name>
+    <rtept lat="41.6417" lon="41.6367"><name>Батуми</name></rtept>
+    <rtept lat="41.9842" lon="42.0950"><name>Озургети</name></rtept>
+    <rtept lat="42.2679" lon="42.6946"><name>Кутаиси</name></rtept>
+    <rtept lat="41.9842" lon="44.1158"><name>Гори</name></rtept>
+    <rtept lat="41.7151" lon="44.8271"><name>Тбилиси</name></rtept>
+  </rte>
+</gpx>

@@ -1,0 +1,89 @@
+/* Панель экспорта (правая колонка студии V3). Цвета — токены студии (--bg, --panel, --raised, --line, --text, --text-2,
+   --action, --action-ink, --info, --warn, --error); запасные значения — на случай, если токен ещё не объявлен. */
+
+.export-panel {
+  --ex-bg: var(--bg, #080f1a);
+  --ex-panel: var(--panel, #101b2b);
+  --ex-raised: var(--raised, #172638);
+  --ex-line: var(--line, #28394a);
+  --ex-text: var(--text, #f4f7fa);
+  --ex-text-2: var(--text-2, #a8bacb);
+  --ex-action: var(--action, #ffbc4d);
+  --ex-action-ink: var(--action-ink, #1a1205);
+  --ex-info: var(--info, #70cfe6);
+  --ex-warn: var(--warn, #ffb547);
+  --ex-error: var(--error, #ff6b6b);
+  --ex-gap: var(--space-3, 12px);
+  --ex-radius: var(--radius-m, 12px);
+
+  display: flex; flex-direction: column; gap: var(--ex-gap);
+  color: var(--ex-text);
+}
+
+.export-hint { margin: 0; line-height: 18px; color: var(--ex-text-2); font-size: 13px; }
+
+/* кнопки панели: собственные классы, чтобы вид не зависел от общих стилей страницы */
+.export-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 22px; margin: 0;
+  border: 1px solid transparent; border-radius: var(--radius-m, 12px);
+  font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.export-btn:focus-visible { outline: 2px solid var(--info, #70cfe6); outline-offset: 2px; }
+.export-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.export-btn--primary { width: 100%; color: var(--ex-action-ink); background: var(--ex-action); }
+.export-btn--primary:hover:not(:disabled) { filter: brightness(1.06); }
+.export-btn--ghost { color: var(--ex-text); background: var(--ex-raised); border-color: var(--ex-line); }
+.export-btn--ghost:hover:not(:disabled) { border-color: var(--ex-action); }
+
+/* ход экспорта */
+.export-progress {
+  display: flex; flex-direction: column; gap: var(--space-2, 8px);
+  padding: var(--space-3, 12px); border-radius: var(--ex-radius);
+  background: var(--ex-raised); border: 1px solid var(--ex-line);
+}
+.export-progress__title { font-weight: 600; }
+.export-progress__text { color: var(--ex-text-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.export-stages { display: flex; gap: var(--space-2, 8px); margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.export-stages__item {
+  flex: 1 1 0; padding: 6px 8px; border-radius: var(--radius-s, 8px);
+  color: var(--ex-text-2); border: 1px solid var(--ex-line); text-align: center;
+}
+.export-stages__item[data-state='active'] { color: var(--ex-action-ink); background: var(--ex-action); border-color: var(--ex-action); font-weight: 600; }
+.export-stages__item[data-state='done'] { color: var(--ex-text); border-color: var(--ex-text-2); }
+
+.export-bar { height: 10px; border-radius: 999px; background: var(--ex-bg); border: 1px solid var(--ex-line); overflow: hidden; }
+.export-bar__fill { height: 100%; width: 0; background: var(--ex-action); transition: width 0.2s linear; }
+
+.export-tab-note { margin: 0; color: var(--ex-warn); font-size: 13px; }
+
+/* сообщения: информация, предупреждение, ошибка */
+.export-notice {
+  display: flex; flex-direction: column; gap: var(--space-2, 8px);
+  padding: 12px 14px; border-radius: var(--ex-radius); font-size: 14px;
+  color: var(--ex-text); background: var(--ex-raised); border: 1px solid var(--ex-line);
+  border-left-width: 4px;
+}
+.export-notice--info { border-left-color: var(--ex-info); }
+.export-notice--warn { border-left-color: var(--ex-warn); }
+.export-notice--error { border-left-color: var(--ex-error); }
+.export-notice__sub { color: var(--ex-text-2); font-size: 13px; }
+.export-notice .export-btn { align-self: flex-start; }
+
+/* готовый ролик */
+.export-done {
+  display: flex; flex-direction: column; gap: var(--ex-gap);
+  padding: var(--space-4, 16px); border-radius: var(--ex-radius);
+  background: var(--ex-raised); border: 1px solid var(--ex-line);
+}
+.export-done__title { font-weight: 600; }
+.export-done--warn { border-color: var(--ex-warn); }
+.export-done--warn .export-done__title { color: var(--ex-warn); }
+.export-done__meta { color: var(--ex-text-2); font-size: 13px; overflow-wrap: anywhere; }
+.export-done__actions { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px); }
+.export-done__actions .export-btn { flex: 1 1 160px; }
+.export-video { width: 100%; align-self: center; max-height: 300px; border-radius: var(--radius-s, 8px); background: #000; }
+
+/* настройки заблокированы на время экспорта */
+.is-export-locked { opacity: 0.55; pointer-events: none; }

@@ -1,0 +1,53 @@
+[
+  {
+    "id": "fictional-rain",
+    "title": {
+      "ru": "Вымышленная глава",
+      "en": "Fictional chapter"
+    },
+    "text": {
+      "ru": "Это выдуманный текст для проверки файла глав.",
+      "en": "This fictional text demonstrates a chapter file."
+    },
+    "anchor": {
+      "countries": [
+        "GE"
+      ],
+      "region": {
+        "name": "Fictional area",
+        "bbox": [
+          40,
+          39,
+          47,
+          44
+        ]
+      },
+      "markedAt": {
+        "from": 1735689600000,
+        "to": 1767139200000
+      }
+    },
+    "mood": "rain",
+    "source": "traveler"
+  },
+  {
+    "id": "fictional-final",
+    "title": {
+      "ru": "Вымышленный финал",
+      "en": "Fictional ending"
+    },
+    "text": {
+      "ru": "Это выдуманный заключительный текст.",
+      "en": "This is a fictional closing text."
+    },
+    "anchor": {
+      "countries": [
+        "GE",
+        "AM"
+      ]
+    },
+    "mood": "warmth",
+    "source": "traveler",
+    "finale": true
+  }
+]

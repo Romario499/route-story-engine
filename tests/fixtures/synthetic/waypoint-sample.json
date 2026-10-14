@@ -1,0 +1,14 @@
+{
+  "source": { "kind": "waypoints" },
+  "segment": { "from": "2025-03-01", "to": "2025-03-10" },
+  "sourceSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "privacy": { "gridDegrees": 0.1, "fileDate": "2026-10-11", "excludedRecent": 0 },
+  "waypoints": [
+    { "lat": 40.0, "lon": 30.0, "color": "lime", "kind": "overnight", "confidence": "stated", "markedAt": 1740830400000, "source": { "file": "Synthetic collection", "collection": "Synthetic collection" }, "duplicates": 0 },
+    { "lat": 40.1, "lon": 30.4, "color": "green", "kind": "overnight", "confidence": "stated", "markedAt": 1740916800000, "source": { "file": "Synthetic collection", "collection": "Synthetic collection" }, "duplicates": 0 },
+    { "lat": 40.3, "lon": 30.9, "color": "green", "kind": "overnight", "confidence": "stated", "markedAt": 1741003200000, "source": { "file": "Synthetic collection", "collection": "Synthetic collection" }, "duplicates": 0 },
+    { "lat": 40.4, "lon": 31.3, "color": "yellow", "kind": "train", "confidence": "stated", "markedAt": 1741089600000, "source": { "file": "Synthetic collection", "collection": "Synthetic collection" }, "duplicates": 0 },
+    { "lat": 41.6, "lon": 33.0, "color": "green", "kind": "overnight", "confidence": "stated", "markedAt": 1741176000000, "source": { "file": "Synthetic collection", "collection": "Synthetic collection" }, "duplicates": 0 },
+    { "lat": 41.7, "lon": 33.4, "color": "green", "kind": "overnight", "confidence": "stated", "markedAt": 1741262400000, "source": { "file": "Synthetic collection", "collection": "Synthetic collection" }, "duplicates": 0 }
+  ]
+}

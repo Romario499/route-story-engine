@@ -1,0 +1,58 @@
+{
+  "file": "exports/redesign/atlas-16x9-ru.mp4",
+  "edge": "155.0.4283.45",
+  "width": 1920,
+  "height": 1080,
+  "samples": 900,
+  "durationSec": 30,
+  "codec": "avc1.640032",
+  "sizeBytes": 35589699,
+  "sha256": "55f279671cb37ce3082fee6d7751e7b4b788c4a6756f2e8098a41b672cb7f978",
+  "player": {
+    "width": 1920,
+    "height": 1080,
+    "duration": 30,
+    "playedTo": 1.214528,
+    "error": null
+  },
+  "decoded": {
+    "frames": 900,
+    "blankFrames": 0,
+    "movementPairs": 451,
+    "identicalMovementPairs": 0,
+    "minVariance": 85.16603971652512
+  },
+  "shots": [
+    {
+      "t": 0
+    },
+    {
+      "t": 2
+    },
+    {
+      "t": 10
+    },
+    {
+      "t": 10.033333333333333
+    },
+    {
+      "t": 15
+    },
+    {
+      "t": 20
+    },
+    {
+      "t": 28
+    },
+    {
+      "t": 29.966666666666665
+    }
+  ],
+  "opts": {
+    "style": "atlas",
+    "format": "16x9",
+    "duration": 30,
+    "lang": "ru"
+  },
+  "exportSec": 45.701
+}

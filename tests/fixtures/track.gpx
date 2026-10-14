@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Garmin Connect" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <metadata>
+    <name>Метаданные</name>
+    <time>2024-05-01T06:00:00Z</time>
+  </metadata>
+  <!-- <trkpt lat="0" lon="0"></trkpt> закомментированная точка не должна читаться -->
+  <wpt lat="41.005000" lon="39.730000">
+    <ele>45</ele>
+    <name>Кафе &amp; заправка</name>
+  </wpt>
+  <wpt lat="41.016000" lon="39.782000"><name><![CDATA[Смотровая <Боздаг>]]></name></wpt>
+  <wpt lat="41.020000" lon="39.790000"></wpt>
+  <trk>
+    <name>День 1: Трабзон — Ризе</name>
+    <type>cycling</type>
+    <trkseg>
+      <trkpt lat="41.002700" lon="39.716800">
+        <ele>30.0</ele>
+        <time>2024-05-01T06:00:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.003800" lon="39.722800">
+        <ele>42.5</ele>
+        <time>2024-05-01T06:01:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.004900" lon="39.728800">
+        <ele>55.0</ele>
+        <time>2024-05-01T06:02:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.006000" lon="39.734800">
+        <ele>67.5</ele>
+        <time>2024-05-01T06:03:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.007100" lon="39.740800">
+        <ele>80.0</ele>
+        <time>2024-05-01T06:04:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.008200" lon="39.746800">
+        <ele>92.5</ele>
+        <time>2024-05-01T06:05:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.009300" lon="39.752800">
+        <ele>105.0</ele>
+        <time>2024-05-01T06:06:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.010400" lon="39.758800">
+        <ele>117.5</ele>
+        <time>2024-05-01T06:07:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="41.014000" lon="39.770000">
+        <ele>110.0</ele>
+        <time>2024-05-01T07:00:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.015200" lon="39.776000">
+        <ele>102.0</ele>
+        <time>2024-05-01T07:01:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.016400" lon="39.782000">
+        <ele>94.0</ele>
+        <time>2024-05-01T07:02:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+      <trkpt lat="41.017600" lon="39.788000">
+        <ele>86.0</ele>
+        <time>2024-05-01T07:03:00Z</time>
+        <extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>112</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

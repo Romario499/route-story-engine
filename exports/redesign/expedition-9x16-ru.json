@@ -1,0 +1,58 @@
+{
+  "file": "exports/redesign/expedition-9x16-ru.mp4",
+  "edge": "155.0.4283.45",
+  "width": 1080,
+  "height": 1920,
+  "samples": 900,
+  "durationSec": 30,
+  "codec": "avc1.640032",
+  "sizeBytes": 36970397,
+  "sha256": "e8a0c5aedb7ded97543aad40900408f111426d052f0a0e252f458a58fd5d7497",
+  "player": {
+    "width": 1080,
+    "height": 1920,
+    "duration": 30,
+    "playedTo": 1.220446,
+    "error": null
+  },
+  "decoded": {
+    "frames": 900,
+    "blankFrames": 0,
+    "movementPairs": 451,
+    "identicalMovementPairs": 0,
+    "minVariance": 490.5711531450588
+  },
+  "shots": [
+    {
+      "t": 0
+    },
+    {
+      "t": 2
+    },
+    {
+      "t": 10
+    },
+    {
+      "t": 10.033333333333333
+    },
+    {
+      "t": 15
+    },
+    {
+      "t": 20
+    },
+    {
+      "t": 28
+    },
+    {
+      "t": 29.966666666666665
+    }
+  ],
+  "opts": {
+    "style": "epic",
+    "format": "9x16",
+    "duration": 30,
+    "lang": "ru"
+  },
+  "exportSec": null
+}

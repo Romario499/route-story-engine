@@ -1,0 +1,477 @@
+{
+  "checkedAt": "2026-10-12T16:06:01.817Z",
+  "hashChecks": [
+    {
+      "file": "synthetic-city-14km.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "synthetic-gap-50km.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "synthetic-long-name.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "synthetic-no-ele.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "synthetic-no-time.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "synthetic-sparse-logger.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "synthetic-stand-noise.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "triglav.gpx.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "trecime.GPX.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "MontBuetChevalBlanc.GPX.mp4",
+      "hashMatches": true,
+      "frames": 450,
+      "duration": 15,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "simplicity-waypoints.mp4",
+      "hashMatches": true,
+      "frames": 900,
+      "duration": 30,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    },
+    {
+      "file": "simplicity-gpx-defaults.mp4",
+      "hashMatches": true,
+      "frames": 900,
+      "duration": 30,
+      "blank": 0,
+      "edge": "155.0.4283.45"
+    }
+  ],
+  "ui": {
+    "states": 40,
+    "overflow": 0,
+    "buttons": [
+      {
+        "state": "cancel",
+        "width": 1440,
+        "height": 900,
+        "top": 697.828125,
+        "bottom": 745.828125
+      },
+      {
+        "state": "cancel",
+        "width": 1920,
+        "height": 1080,
+        "top": 877,
+        "bottom": 925
+      },
+      {
+        "state": "cancel",
+        "width": 1024,
+        "height": 768,
+        "top": 1524.828125,
+        "bottom": 1572.828125
+      },
+      {
+        "state": "cancel",
+        "width": 390,
+        "height": 844,
+        "top": 2341.671875,
+        "bottom": 2389.671875
+      },
+      {
+        "state": "cancel",
+        "width": 360,
+        "height": 740,
+        "top": 2272.171875,
+        "bottom": 2320.171875
+      },
+      {
+        "state": "done",
+        "width": 1440,
+        "height": 900,
+        "top": 697.828125,
+        "bottom": 745.828125
+      },
+      {
+        "state": "done",
+        "width": 1920,
+        "height": 1080,
+        "top": 697.828125,
+        "bottom": 745.828125
+      },
+      {
+        "state": "done",
+        "width": 1024,
+        "height": 768,
+        "top": 1524.828125,
+        "bottom": 1572.828125
+      },
+      {
+        "state": "done",
+        "width": 390,
+        "height": 844,
+        "top": 2341.671875,
+        "bottom": 2389.671875
+      },
+      {
+        "state": "done",
+        "width": 360,
+        "height": 740,
+        "top": 2272.171875,
+        "bottom": 2320.171875
+      }
+    ]
+  },
+  "seek": [
+    {
+      "key": "epic-9x16-ru",
+      "maxDifference": 0.001865234375,
+      "tilesComplete": true
+    },
+    {
+      "key": "epic-9x16-en",
+      "maxDifference": 0.00005859375,
+      "tilesComplete": true
+    },
+    {
+      "key": "epic-16x9-ru",
+      "maxDifference": 0.002451171875,
+      "tilesComplete": true
+    },
+    {
+      "key": "epic-16x9-en",
+      "maxDifference": 0.0003125,
+      "tilesComplete": true
+    },
+    {
+      "key": "atlas-9x16-ru",
+      "maxDifference": 0.04310546875,
+      "tilesComplete": true
+    },
+    {
+      "key": "atlas-9x16-en",
+      "maxDifference": 0.025341796875,
+      "tilesComplete": true
+    },
+    {
+      "key": "atlas-16x9-ru",
+      "maxDifference": 0.0464453125,
+      "tilesComplete": true
+    },
+    {
+      "key": "atlas-16x9-en",
+      "maxDifference": 0.02162109375,
+      "tilesComplete": true
+    }
+  ],
+  "simplicity": {
+    "waypoints": {
+      "toPreview": [
+        "file-selection"
+      ],
+      "toMp4": [
+        "file-selection",
+        "export"
+      ],
+      "previewReadySec": 5.406,
+      "exportSec": 35.621
+    },
+    "gpx": {
+      "toPreview": [
+        "file-selection"
+      ],
+      "toMp4": [
+        "file-selection",
+        "export"
+      ],
+      "previewReadySec": 3.366,
+      "exportSec": 39.847
+    }
+  },
+  "montage": {
+    "togglesFound": 9,
+    "remainingChecked": []
+  },
+  "pngs": [
+    {
+      "path": "docs/visual-review/after/atlas-16x9-en.png",
+      "bytes": 404708,
+      "sha256": "04e60d0f1a32aafe5e4b5c858ad66105b1d4e62a528c7fbdbf8c1d067b806646",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/atlas-16x9-ru-mp4.png",
+      "bytes": 842570,
+      "sha256": "385e7e30edea7b3353702ca20c238941963fbfd918a1232a7c70ba8ce8c68e50",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/atlas-16x9-ru.png",
+      "bytes": 405742,
+      "sha256": "79344dbd6a4a33d6e29e0f9bb2518744662d09a9063373dfc8ad4842d427c91c",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/atlas-9x16-en-mp4.png",
+      "bytes": 785741,
+      "sha256": "6ff18dd596910e11b20e27cd195abf537d346a9cb343589a4c724880423e6d8b",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/atlas-9x16-en.png",
+      "bytes": 444040,
+      "sha256": "5708886699fe04088f54e238c825cf490ad74cd78078a4808545259a4c3569cb",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/atlas-9x16-ru.png",
+      "bytes": 444412,
+      "sha256": "d6bb1e1f7ff0693ee6ecd58fdf6ce203006c1d2dbb33b91f44276938ed0dfcf8",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/epic-16x9-en.png",
+      "bytes": 537703,
+      "sha256": "fd81f5d455e53b337760492024a51f9afe484545ca939fe19b29d8489170fcbe",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/epic-16x9-ru.png",
+      "bytes": 538783,
+      "sha256": "3db1511f9203226a752ae54e31e0bd5aa2b7e80d8a7e3ac7582e4b666a167c41",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/epic-9x16-en.png",
+      "bytes": 650700,
+      "sha256": "08d12e6618f02ebf586591c9d313f2f397ddaae13693ba7a18cb29165b3fb984",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/epic-9x16-ru.png",
+      "bytes": 656101,
+      "sha256": "ce7c2a76dfcc64f58e56ddf2a4c946ba8fdfe5739e2abd09de3b22baa2aabb93",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/expedition-16x9-en-mp4.png",
+      "bytes": 1319341,
+      "sha256": "5c8dba3ef29f276851553fefda1151355a82ca67e7b10a4157c7766c64fe07b9",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/expedition-9x16-ru-mp4.png",
+      "bytes": 1379239,
+      "sha256": "80da1c66e37bbcee3ef7b2c315e2f6dc0cbd377c8af275f335929baece8916ec",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/neon-16x9-en-mp4.png",
+      "bytes": 559849,
+      "sha256": "4af0e92e2f6ada6243d4bd7bd57b976336e2373faa2830e0b51390a46c3edf04",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/neon-9x16-ru-mp4.png",
+      "bytes": 508046,
+      "sha256": "028b671bfe3db161f94410d7c850f92b8496d6b5b2c3ba887a7d339971d91d41",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/ui-before-after.png",
+      "bytes": 564775,
+      "sha256": "7afe0fd0378c2f16a1ff79de57dfb5a62796a6e034b1cc600b38356de1cec3c9",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/v3-before-after-16x9.png",
+      "bytes": 575394,
+      "sha256": "8a3674497c91ef2c892cc6a71c70fb44bd12ba53c3ea5e5060594f652488fa58",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/after/v3-before-after-9x16.png",
+      "bytes": 439046,
+      "sha256": "aca53e64b52089d98679f3c95df2095aea68e23eb17686fc4fa1bb1d534d294e",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/ui-1440-empty.png",
+      "bytes": 259628,
+      "sha256": "b2db6c2deb540d33194fa2dfad573e9f9e2d4a26d913fea8e579cc5877adbacd",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/ui-1440-export.png",
+      "bytes": 522195,
+      "sha256": "ca6ea0c0e038e33da53257811eec07f6ab925e5aa271aac996ac869ac01ece84",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/ui-1440-loaded.png",
+      "bytes": 289054,
+      "sha256": "5620df7aa529e9ab11c4c627d03e47b0aa494110b98de9db064d98c44c5f1750",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/ui-390-empty.png",
+      "bytes": 108907,
+      "sha256": "eaf7015bf1c28a32f5c819fc2074fe00faad151ed4225c48fb7da7e8d2d4ddec",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/ui-390-export.png",
+      "bytes": 301938,
+      "sha256": "9dcb3a2a22cc9a0aac70df3c5c699c78bc9741edaa4eabee51be2bb1af2fa0ba",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/ui-390-loaded.png",
+      "bytes": 106702,
+      "sha256": "33f7366146a9c250ba093e3e145063b8f0cde5fb8883b1a493b615f63205ab33",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/video-16x9-t01.png",
+      "bytes": 508977,
+      "sha256": "4d2d1634321e94732db1053a59bb2187f78909a3f373f38b2c76ebfc406064b6",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/video-16x9-t15.png",
+      "bytes": 345308,
+      "sha256": "32abd6cfd92d222920d578f4a08ec48ee16e6a728e2b21f09208c09e7063e80a",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/video-16x9-t29.png",
+      "bytes": 460886,
+      "sha256": "459221c6667d0ad3316dc8ec5d55326a96e852aa9beec3813acd71fca78d01e8",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/video-9x16-t01.png",
+      "bytes": 489893,
+      "sha256": "71552ebe1b3edda2d853642e2b1cd3fd63d02518f6dfe478fd02a13e4a6e3b14",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/video-9x16-t15.png",
+      "bytes": 368352,
+      "sha256": "95f995c54588fd772a87f21cc3fb07cb9a63d325f19f719ebda2499b77d2fd4d",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/before/video-9x16-t29.png",
+      "bytes": 446188,
+      "sha256": "6f685265f40a013e20dbf3e9da438585bccf1128be750a9365313b4b90e13f70",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/preview-vs-export/atlas-16x9-ru.png",
+      "bytes": 1205097,
+      "sha256": "f8847288554c01ec45a0f2f9aaaeb17d2febefd62275da94d0237910d7c73da9",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/preview-vs-export/atlas-9x16-en.png",
+      "bytes": 1183392,
+      "sha256": "a2fb985c014fcaf44af37e059f7df8c635ddd48842c68d7aa9199e811a227ad7",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/preview-vs-export/epic-16x9-en.png",
+      "bytes": 1757328,
+      "sha256": "e20fb5adf3672329ce98c93a2618b926b4e0553da179ee285244058cf7a78725",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/preview-vs-export/epic-9x16-ru.png",
+      "bytes": 1853830,
+      "sha256": "a25ea13241527523721be7b5299d1b19e1f227451d5a754104f1f8740c6b91fc",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/ui-matrix/1024.png",
+      "bytes": 322021,
+      "sha256": "6ee57eb1f28323c6ec81f2417c5373d88f60af620cb72a7f7931b55c8a1ea0d5",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/ui-matrix/1440.png",
+      "bytes": 280727,
+      "sha256": "319a656b61f5a2e4ffdca63cabd5893bee90f01ee665796c44f20eaefcbfae16",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/ui-matrix/1920.png",
+      "bytes": 262922,
+      "sha256": "eac48c3d5beef375c5b7a2c5a5d1aeaae9fa9a582b187d0ed3927e871d0d133e",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/ui-matrix/360.png",
+      "bytes": 354253,
+      "sha256": "87e3be2488c2fe66f17de6a11de3e5b0f28fc76a397d028a88d535b3128219be",
+      "visuallyReviewed": true
+    },
+    {
+      "path": "docs/visual-review/ui-matrix/390.png",
+      "bytes": 381115,
+      "sha256": "20f10a9ee3309d840299e723a7f0551334df4ec0e1d1c9e58acbf551ec1bae90",
+      "visuallyReviewed": true
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- СИНТЕТИКА: битый файл для тестов, это не настоящий GPS-трек -->
+<gpx version="1.1" creator="synthetic fixture" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>Синтетика: битый</name><desc>Синтетика: файл оборван посреди точки</desc></metadata>
+  <trk><trkseg>
+    <trkpt lat="56.300000" lon="44.000000"><ele>120.0</ele><time>2024-05-21T05:00:00.000Z</time></trkpt>
+    <trkpt lat="56.3010

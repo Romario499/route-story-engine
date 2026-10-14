@@ -1,0 +1,52 @@
+{
+  "file": "exports/redesign/check/neon-16x9-en.mp4",
+  "edge": "155.0.4283.45",
+  "width": 1920,
+  "height": 1080,
+  "samples": 450,
+  "durationSec": 15,
+  "codec": "avc1.640032",
+  "sizeBytes": 17767032,
+  "sha256": "d8de0653b14a2f026bfd9cf5329e0e48f3ac7c8ab6494f93d30c3f0174e0084b",
+  "player": {
+    "width": 1920,
+    "height": 1080,
+    "duration": 15,
+    "playedTo": 1.21746,
+    "error": null
+  },
+  "decoded": {
+    "frames": 450,
+    "blankFrames": 0,
+    "movementPairs": 91,
+    "identicalMovementPairs": 0,
+    "minVariance": 86.98311510852773
+  },
+  "shots": [
+    {
+      "t": 0
+    },
+    {
+      "t": 2
+    },
+    {
+      "t": 7
+    },
+    {
+      "t": 7.033333333333333
+    },
+    {
+      "t": 13
+    },
+    {
+      "t": 14.966666666666667
+    }
+  ],
+  "opts": {
+    "style": "neon",
+    "format": "16x9",
+    "duration": 15,
+    "lang": "en"
+  },
+  "exportSec": null
+}

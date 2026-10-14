@@ -1,0 +1,338 @@
+[
+  {
+    "file": "exports/redesign/atlas-16x9-ru.mp4",
+    "edge": "155.0.4283.45",
+    "width": 1920,
+    "height": 1080,
+    "samples": 900,
+    "durationSec": 30,
+    "codec": "avc1.640032",
+    "sizeBytes": 35589699,
+    "sha256": "55f279671cb37ce3082fee6d7751e7b4b788c4a6756f2e8098a41b672cb7f978",
+    "player": {
+      "width": 1920,
+      "height": 1080,
+      "duration": 30,
+      "playedTo": 1.23491,
+      "error": null
+    },
+    "decoded": {
+      "frames": 900,
+      "blankFrames": 0,
+      "movementPairs": 451,
+      "identicalMovementPairs": 0,
+      "minVariance": 85.16603971652512
+    },
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 2
+      },
+      {
+        "t": 10
+      },
+      {
+        "t": 10.033333333333333
+      },
+      {
+        "t": 15
+      },
+      {
+        "t": 20
+      },
+      {
+        "t": 28
+      },
+      {
+        "t": 29.966666666666665
+      }
+    ],
+    "opts": {
+      "style": "atlas",
+      "format": "16x9",
+      "duration": 30,
+      "lang": "ru"
+    },
+    "exportSec": null
+  },
+  {
+    "file": "exports/redesign/atlas-9x16-en.mp4",
+    "edge": "155.0.4283.45",
+    "width": 1080,
+    "height": 1920,
+    "samples": 900,
+    "durationSec": 30,
+    "codec": "avc1.640032",
+    "sizeBytes": 35308002,
+    "sha256": "47bed739aa2a90ed5c44f0925a49a23052a500b91246d358fc85f536e5adfc76",
+    "player": {
+      "width": 1080,
+      "height": 1920,
+      "duration": 30,
+      "playedTo": 1.224188,
+      "error": null
+    },
+    "decoded": {
+      "frames": 900,
+      "blankFrames": 0,
+      "movementPairs": 451,
+      "identicalMovementPairs": 0,
+      "minVariance": 74.64317322417628
+    },
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 2
+      },
+      {
+        "t": 10
+      },
+      {
+        "t": 10.033333333333333
+      },
+      {
+        "t": 15
+      },
+      {
+        "t": 20
+      },
+      {
+        "t": 28
+      },
+      {
+        "t": 29.966666666666665
+      }
+    ],
+    "opts": {
+      "style": "atlas",
+      "format": "9x16",
+      "duration": 30,
+      "lang": "en"
+    },
+    "exportSec": null
+  },
+  {
+    "file": "exports/redesign/expedition-16x9-en.mp4",
+    "edge": "155.0.4283.45",
+    "width": 1920,
+    "height": 1080,
+    "samples": 900,
+    "durationSec": 30,
+    "codec": "avc1.640032",
+    "sizeBytes": 37042424,
+    "sha256": "74aba75ebf323b59d3e01989296afb6913fc4af5c0579ffad39052c3cbfd2bb0",
+    "player": {
+      "width": 1920,
+      "height": 1080,
+      "duration": 30,
+      "playedTo": 1.219885,
+      "error": null
+    },
+    "decoded": {
+      "frames": 900,
+      "blankFrames": 0,
+      "movementPairs": 451,
+      "identicalMovementPairs": 0,
+      "minVariance": 648.2129880751236
+    },
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 2
+      },
+      {
+        "t": 10
+      },
+      {
+        "t": 10.033333333333333
+      },
+      {
+        "t": 15
+      },
+      {
+        "t": 20
+      },
+      {
+        "t": 28
+      },
+      {
+        "t": 29.966666666666665
+      }
+    ],
+    "opts": {
+      "style": "epic",
+      "format": "16x9",
+      "duration": 30,
+      "lang": "en"
+    },
+    "exportSec": null
+  },
+  {
+    "file": "exports/redesign/expedition-9x16-ru.mp4",
+    "edge": "155.0.4283.45",
+    "width": 1080,
+    "height": 1920,
+    "samples": 900,
+    "durationSec": 30,
+    "codec": "avc1.640032",
+    "sizeBytes": 36970397,
+    "sha256": "e8a0c5aedb7ded97543aad40900408f111426d052f0a0e252f458a58fd5d7497",
+    "player": {
+      "width": 1080,
+      "height": 1920,
+      "duration": 30,
+      "playedTo": 1.233842,
+      "error": null
+    },
+    "decoded": {
+      "frames": 900,
+      "blankFrames": 0,
+      "movementPairs": 451,
+      "identicalMovementPairs": 0,
+      "minVariance": 490.5711531450588
+    },
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 2
+      },
+      {
+        "t": 10
+      },
+      {
+        "t": 10.033333333333333
+      },
+      {
+        "t": 15
+      },
+      {
+        "t": 20
+      },
+      {
+        "t": 28
+      },
+      {
+        "t": 29.966666666666665
+      }
+    ],
+    "opts": {
+      "style": "epic",
+      "format": "9x16",
+      "duration": 30,
+      "lang": "ru"
+    },
+    "exportSec": null
+  },
+  {
+    "file": "exports/redesign/check/neon-16x9-en.mp4",
+    "edge": "155.0.4283.45",
+    "width": 1920,
+    "height": 1080,
+    "samples": 450,
+    "durationSec": 15,
+    "codec": "avc1.640032",
+    "sizeBytes": 17767032,
+    "sha256": "d8de0653b14a2f026bfd9cf5329e0e48f3ac7c8ab6494f93d30c3f0174e0084b",
+    "player": {
+      "width": 1920,
+      "height": 1080,
+      "duration": 15,
+      "playedTo": 1.226858,
+      "error": null
+    },
+    "decoded": {
+      "frames": 450,
+      "blankFrames": 0,
+      "movementPairs": 91,
+      "identicalMovementPairs": 0,
+      "minVariance": 86.98311510852773
+    },
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 2
+      },
+      {
+        "t": 7
+      },
+      {
+        "t": 7.033333333333333
+      },
+      {
+        "t": 13
+      },
+      {
+        "t": 14.966666666666667
+      }
+    ],
+    "opts": {
+      "style": "neon",
+      "format": "16x9",
+      "duration": 15,
+      "lang": "en"
+    },
+    "exportSec": null
+  },
+  {
+    "file": "exports/redesign/check/neon-9x16-ru.mp4",
+    "edge": "155.0.4283.45",
+    "width": 1080,
+    "height": 1920,
+    "samples": 450,
+    "durationSec": 15,
+    "codec": "avc1.640032",
+    "sizeBytes": 17567605,
+    "sha256": "d3bbd0bf5aafb49cfa5ca2e217ff0a406fc6eb4946964b165d797b788b6b8cc4",
+    "player": {
+      "width": 1080,
+      "height": 1920,
+      "duration": 15,
+      "playedTo": 1.223613,
+      "error": null
+    },
+    "decoded": {
+      "frames": 450,
+      "blankFrames": 0,
+      "movementPairs": 91,
+      "identicalMovementPairs": 0,
+      "minVariance": 69.42076013382336
+    },
+    "shots": [
+      {
+        "t": 0
+      },
+      {
+        "t": 2
+      },
+      {
+        "t": 7
+      },
+      {
+        "t": 7.033333333333333
+      },
+      {
+        "t": 13
+      },
+      {
+        "t": 14.966666666666667
+      }
+    ],
+    "opts": {
+      "style": "neon",
+      "format": "9x16",
+      "duration": 15,
+      "lang": "ru"
+    },
+    "exportSec": null
+  }
+]

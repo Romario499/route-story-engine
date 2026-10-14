@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Synthetic collection</name>
+<Style id="camp"><IconStyle><Icon><href>placemark-green.png</href></Icon></IconStyle></Style>
+<StyleMap id="camp-map"><Pair><key>normal</key><styleUrl>#camp</styleUrl></Pair></StyleMap>
+<Folder><name>Synthetic journey</name>
+<Placemark><name>Start &amp; camp</name><styleUrl>#placemark-lime</styleUrl><TimeStamp><when>2024-11-10T00:00:00Z</when></TimeStamp><Point><coordinates>30,40,100</coordinates></Point></Placemark>
+<Placemark><name>Camp two</name><styleUrl>#camp-map</styleUrl><TimeStamp><when>2025-01-02T00:00:00Z</when></TimeStamp><Point><coordinates>31,41,110</coordinates></Point></Placemark>
+<Placemark><name>Camp two</name><styleUrl>#placemark-green</styleUrl><TimeStamp><when>2025-01-02T00:00:00Z</when></TimeStamp><Point><coordinates>31.0000001,41.0000001</coordinates></Point></Placemark>
+<Placemark><name><![CDATA[Train <stop>]]></name><styleUrl>#placemark-yellow</styleUrl><TimeStamp><when>2025-01-03T00:00:00Z</when></TimeStamp><Point><coordinates>32,42</coordinates></Point></Placemark>
+<Placemark><name>Unconfirmed stop</name><styleUrl>#placemark-red</styleUrl><TimeStamp><when>2025-01-04T00:00:00Z</when></TimeStamp><Point><coordinates>33,43</coordinates></Point></Placemark>
+<Placemark><name>Older private</name><styleUrl>#placemark-red</styleUrl><TimeStamp><when>2023-01-01T00:00:00Z</when></TimeStamp><Point><coordinates>20,50</coordinates></Point></Placemark>
+<Placemark><name>Other private</name><styleUrl>#placemark-blue</styleUrl><TimeStamp><when>2025-01-03T00:00:00Z</when></TimeStamp><Point><coordinates>21,51</coordinates></Point></Placemark>
+<Placemark><name>Undated private</name><styleUrl>#placemark-green</styleUrl><Point><coordinates>22,52</coordinates></Point></Placemark>
+<Placemark><name>Old walk</name><LineString><coordinates>20,50 21,51</coordinates></LineString></Placemark>
+</Folder></Document></kml>

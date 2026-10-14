@@ -1,0 +1,7 @@
+.waypoint-selection { display: grid; gap: 12px; }
+.waypoint-selection h3, .waypoint-selection p { margin: 0; }
+.waypoint-selection__period { display: flex; gap: 12px; flex-wrap: wrap; }
+.waypoint-selection__period label { display: grid; gap: 4px; min-width: 120px; }
+.waypoint-selection__period input { min-width: 0; padding: 8px; border: 1px solid var(--stroke, #344159); border-radius: 8px; background: var(--panel, #131d30); color: var(--text, #eef2f8); color-scheme: dark; }
+.waypoint-selection__collections { display: grid; gap: 8px; max-height: 220px; overflow: auto; border: 1px solid var(--stroke, #344159); border-radius: 8px; padding: 12px; }
+.waypoint-selection label input[type="checkbox"] { margin-right: 8px; accent-color: var(--accent, #e7ad56); }
