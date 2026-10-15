@@ -8,8 +8,8 @@ vi.mock('../../src/render/assets', async (importOriginal) => {
   return { ...original, drawIcon: (...args: Parameters<typeof original.drawIcon>) => { iconCalls.push(args[1]); } };
 });
 
-import { timelineOptionsFor } from '../../src/render/layout';
-import { drawOverlay, resolveTitle } from '../../src/render/overlay';
+import { layoutFor, timelineOptionsFor } from '../../src/render/layout';
+import { drawOverlay, overlayAttributionRect, resolveTitle } from '../../src/render/overlay';
 import { STYLES } from '../../src/render/styles';
 import { buildTimeline } from '../../src/story';
 import { journeyFacts } from '../../src/story/legs';
@@ -177,7 +177,8 @@ describe('смена транспорта — одна подпись в сло�
     expect(iconCalls).toContain('train');
     // смена на «неизвестно» тоже подписана, но не называет способ
     const unknown = fs.find((f) => f.cards[0]?.transport?.kind === 'unknown' && f.cards[0].alpha > 0.99);
-    if (unknown) expect(draw(unknown, s).texts).toContain('Способ неизвестен');
+    // у участка без способа заголовок смысловой, а оговорка — надзаголовок капсом
+    if (unknown) { const u = draw(unknown, s).texts; expect(u).toContain('Следующий участок'); expect(u).toContain('СПОСОБ НЕИЗВЕСТЕН'); }
   });
 
   it('значок смены не дублируется плашкой: пока подпись на полной яркости, она в слоте одна', () => {
@@ -212,5 +213,63 @@ describe('заголовок по умолчанию', () => {
     expect(resolveTitle('ru', 'Моя поездка', named, oneCountry)).toBe('Моя поездка');
     const gps = { ...named, source: { kind: 'track' as const }, journeyWaypoints: undefined };
     expect(resolveTitle('ru', '', gps, oneCountry)).toBe('Organic Maps Bookmarks and Tracks');
+  });
+});
+
+describe('косметика кадра: «Рядом», участок без способа, атрибуция над прогрессом', () => {
+  it('«Рядом»: пока название города погашено как дубль подписи события, нет ни прочерка, ни подписи, ни значка', () => {
+    for (const format of ['9:16', '16:9'] as const) for (const lang of ['ru', 'en'] as const) {
+      const s = setup({ format, styleId: 'epic', lang });
+      const f = framesOf(s).find((x) => x.act === 'journey' && x.stats.place && x.cards[0]?.transport && x.cards[0].alpha > 0.99);
+      expect(f, `${format} ${lang}: кадр с картой участка и городом рядом`).toBeDefined();
+      iconCalls.length = 0;
+      const rec = draw(f!, s);
+      expect(rec.texts).not.toContain(t(lang, 'label.nearMark'));
+      expect(rec.texts).not.toContain('—');
+      expect(rec.texts).not.toContain(lang === 'ru' ? f!.stats.place!.nameRu : f!.stats.place!.nameEn);
+      expect(iconCalls).not.toContain('city');
+      // остальные показатели на месте
+      expect(rec.texts).toContain(t(lang, 'label.nights'));
+    }
+  });
+
+  it('участок с неизвестным способом: заголовок — «Следующий участок», «Способ неизвестен» остаётся видимой строкой (в т. ч. при источнике главы)', () => {
+    for (const lang of ['ru', 'en'] as const) {
+      const s = setup({ lang });
+      const f = framesOf(s).find((x) => x.cards[0]?.transport?.kind === 'unknown' && x.cards[0].alpha > 0.99);
+      expect(f, `${lang}: карта участка с неизвестным способом`).toBeDefined();
+      for (const frame of [f!, { ...f!, chapterMood: { weights: { cold: 1, heat: 0, rain: 0, altitude: 0, warmth: 0, neutral: 0 } } }]) {
+        const rec = draw(frame, s);
+        const head = rec.textRects.filter((r) => r.text === t(lang, 'transport.unknownLeg'));
+        const note = rec.textRects.filter((r) => r.text.toLowerCase() === t(lang, 'transport.unknown').toLowerCase());
+        expect(head, `${lang}: заголовок`).toHaveLength(1);
+        expect(note, `${lang}: оговорка`).toHaveLength(1);
+        expect(note[0].y, 'оговорка — надзаголовок, меньше и выше заголовка').toBeLessThan(head[0].y);
+        expect(note[0].h).toBeLessThan(head[0].h);
+        expect(rec.texts).not.toContain(t(lang, 'transport.unknown')); // главным крупным заголовком служебная фраза не бывает
+      }
+    }
+    expect(t('ru', 'transport.unknownLeg')).toBe('Следующий участок');
+    expect(t('en', 'transport.unknownLeg')).toBe('Next leg');
+  });
+
+  it.each(['epic', 'atlas', 'neon'] as const)('атрибуция и полоса прогресса: зазор ≥ 8 px, всё внутри кадра (%s)', (styleId) => {
+    for (const format of ['9:16', '16:9'] as const) {
+      const s = setup({ format, styleId });
+      const layout = layoutFor(format, styleId);
+      const f = framesOf(s).find((x) => x.act === 'journey')!;
+      const rec = recorder();
+      const rect = overlayAttributionRect(rec.ctx, f, { route, enrichment, settings: s, style: STYLES[styleId], reconstruction: false });
+      const stroke = 2; // обводка текста — 0,1 кегля (кегль атрибуции ≤ 20)
+      const bottom = rect.y + rect.h + stroke, top = rect.y - stroke;
+      const { progress } = layout;
+      const gap = format === '16:9' ? 8 : 0; // 16:9: строка над полосой; 9:16: полоса над текстом (там зазор задаёт сам расчёт атрибуции)
+      const disjointY = bottom + gap <= progress.y || top >= progress.y + progress.h + gap;
+      expect(disjointY, `${format} ${styleId}: атрибуция ${top.toFixed(1)}…${bottom.toFixed(1)} против прогресса ${progress.y}…${progress.y + progress.h}`).toBe(true);
+      expect(top).toBeGreaterThanOrEqual(0);
+      expect(bottom).toBeLessThanOrEqual(layout.height);
+      expect(rect.x + rect.w).toBeLessThanOrEqual(layout.width);
+      expect(progress.y + progress.h).toBeLessThanOrEqual(layout.height);
+    }
   });
 });

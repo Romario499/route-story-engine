@@ -7,7 +7,7 @@
 // Размеры шрифтов — из `StyleDef.type`, прямоугольники — из `layout.ts`, цвета оформления — здесь, ключом по styleId.
 import {
   beatTitle, chapterCaption, countryName, sourceLabel, formatAltitude, formatDate, formatDateRange, formatDistance, formatNumber,
-  attributionText, formatSpeed, placeName, t, transportTitle,
+  attributionText, formatSpeed, placeName, t, transportKicker, transportTitle,
 } from '../i18n';
 import { ACTS, factsAt, isWaypointRoute, journeyFacts } from '../story';
 import { overviewCountries, overviewLabels, type OverviewLabels } from '../story/legs';
@@ -809,12 +809,14 @@ function drawEventCard(env: Env, card: ActiveCard, strength: number): void {
   if (alpha <= 0.004) return;
   // смена транспорта (маршрут по меткам): значок вида передвижения, надзаголовок и название; уницикл подписан как предположение
   const cap: BeatCaption = card.transport
-    ? { kicker: t(env.lang, 'transport.change'), title: transportTitle(env.lang, card.transport) }
+    ? { kicker: transportKicker(env.lang, card.transport), title: transportTitle(env.lang, card.transport) }
     : beatCaption(env.lang, card.beat, env.data.route, !!env.frame.shot);
   // источник главы заменяет надзаголовок, но не оговорку «рядом» у старта/финиша по меткам
   const nearEnd = !card.transport && !!card.beat.place && (card.beat.kind === 'start' || card.beat.kind === 'finish')
     && isWaypointRoute(env.data.route);
-  if (env.frame.chapterMood && !nearEnd) cap.kicker = sourceLabel(env.lang, isWaypointRoute(env.data.route) ? 'organic-maps' : 'gps');
+  // оговорка «способ неизвестен» источником главы не подменяется: честность важнее атрибуции
+  const keepKicker = card.transport?.kind === 'unknown';
+  if (env.frame.chapterMood && !nearEnd && !keepKicker) cap.kicker = sourceLabel(env.lang, isWaypointRoute(env.data.route) ? 'organic-maps' : 'gps');
   const a = layout.caption;
   const lead = 56;
   const isFlag = card.beat.kind === 'country' && !!card.beat.country;
@@ -990,6 +992,7 @@ function waypointStatItems(env: Env): StatItem[] {
       value: formatNumber(lang, data.route.waypointOrderConfirmed ? Math.min(data.route.points.length, Math.floor(frame.head) + 1) : data.route.points.length), unit: '', widest: [formatNumber(lang, data.route.points.length)],
     });
   }
+  // Пока город есть, строка занимает место; если название погашено (дубль подписи события), геометрия не меняется, а прочерк и подпись не рисуются (drawStats).
   if (info.city && frame.stats.place) items.push(cityItem(env));
   return items;
 }
@@ -1122,13 +1125,18 @@ function drawStats(env: Env, items: StatItem[], g: StatsGeo, strength: number): 
     const cy0 = g.top + row * g.rowH;
     const valueBase = cy0 + 6 + g.valueSize * 0.78;
     const labelBase = valueBase + 14 + g.labelSize * 0.78;
+    // «Рядом» у маршрута по меткам: нет города (или он гасится как дубль подписи события) — нет и значка, и подписи, и прочерка
+    const nearVisible = it.place && isWaypointRoute(env.data.route) ? clamp01(it.place.curAlpha + it.place.prevAlpha) : 1;
+    if (nearVisible <= 0.004) return;
     if (skin.icons || it.icon === 'tent') {
       // Только ночёвки: значок относится к числу, а не к левому краю широкой ячейки. GPS-показатели сохраняют геометрию.
       const unitW = it.unit ? textWidth(env, it.unit, 'secondary', g.valueSize * 0.5) + 12 : 0;
       const iconX = it.icon === 'tent'
         ? right - unitW - numberWidth(env, it.value ?? '—', g.valueSize) - 18 - g.iconSize / 2
         : cx0 + g.iconSize / 2;
+      ctx.save(); ctx.globalAlpha *= nearVisible;
       drawIcon(ctx, it.icon, iconX, valueBase - g.valueSize * 0.34, g.iconSize, skin.accent);
+      ctx.restore();
     }
 
     if (it.kind === 'num') {
@@ -1142,14 +1150,14 @@ function drawStats(env: Env, items: StatItem[], g: StatsGeo, strength: number): 
       if (it.place) {
         const pv = it.place;
         const dash = 0.4 * (1 - clamp01(pv.curAlpha + pv.prevAlpha));
-        if (dash > 0.004) text(env, '—', right, valueBase, { ...opts, alpha: dash });
+        if (dash > 0.004 && !isWaypointRoute(env.data.route)) text(env, '—', right, valueBase, { ...opts, alpha: dash });
         if (pv.prev && pv.prevAlpha > 0.004) text(env, placeName(env.lang, pv.prev), right, valueBase, { ...opts, alpha: pv.prevAlpha });
         if (pv.cur && pv.curAlpha > 0.004) text(env, placeName(env.lang, pv.cur), right, valueBase, { ...opts, alpha: pv.curAlpha });
       } else {
         text(env, it.value ?? '—', right, valueBase, { ...opts, alpha: it.value === null ? 0.4 : 1 });
       }
     }
-    text(env, it.label, right, labelBase, { role: 'label', size: g.labelSize, color: skin.muted, maxW: g.textW, minSize: 22, align: 'right' });
+    text(env, it.label, right, labelBase, { role: 'label', size: g.labelSize, color: skin.muted, maxW: g.textW, minSize: 22, align: 'right', alpha: nearVisible });
   });
   ctx.restore();
 }

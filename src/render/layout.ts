@@ -79,7 +79,8 @@ export function layoutFor(format: Format, _styleId: StyleId = 'epic'): Layout {
   const safeRect = rect(safe.left, safe.top, width - safe.left - safe.right, height - safe.top - safe.bottom);
   const work = WORK_AREA[format];
   const wide = format === '16:9';
-  const attribution = { x: work.x, y: wide ? 987 : 1516, w: work.w };
+  // 16:9: нижняя строка атрибуции (с выносными элементами и обводкой, ~7 px под базовой линией) не касается полосы прогресса (y 994): зазор ≥ 8 px.
+  const attribution = { x: work.x, y: wide ? 978 : 1516, w: work.w };
   const readability = {
     countryScale: wide ? 1.1875 : 1, summaryScale: wide ? 1.16 : 1,
     overviewLineScale: wide ? 1.22 : 1,

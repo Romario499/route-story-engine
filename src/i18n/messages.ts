@@ -112,7 +112,10 @@ export const RU = {
   'transport.train': 'Поезд',
   /** Предположение по меткам (шаг между ночёвками), не факт. */
   'transport.unicycle': 'Уницикл · предположительно',
+  /** Служебная оговорка: показывается второстепенной строкой, не заголовком сцены. */
   'transport.unknown': 'Способ неизвестен',
+  /** Смысловой заголовок карточки участка, у которого вид передвижения неизвестен (термин «участок», CONTEXT.md). */
+  'transport.unknownLeg': 'Следующий участок',
   'summary.overnightPlaces': (v: Vars) => ruPlural(num(v), ['место ночёвки', 'места ночёвки', 'мест ночёвки']),
   'summary.nights': (v: Vars) => ruPlural(num(v), ['ночёвка', 'ночёвки', 'ночёвок']), // legacy; кадр по меткам этот ключ не использует
 } satisfies Record<string, Message>;
@@ -201,6 +204,7 @@ export const EN: Record<OverlayKey, Message> = {
   'transport.train': 'Train',
   'transport.unicycle': 'Unicycle · inferred',
   'transport.unknown': 'Mode unknown',
+  'transport.unknownLeg': 'Next leg',
   'summary.overnightPlaces': (v: Vars) => enPlural(num(v), 'overnight place', 'overnight places'),
   'summary.nights': (v: Vars) => enPlural(num(v), 'night', 'nights'), // legacy
 };

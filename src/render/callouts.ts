@@ -17,7 +17,7 @@ function crossesLeader(a: { x: number; y: number }, b: { x: number; y: number },
 }
 
 export function placeCallout(anchor: { x: number; y: number }, bounds: Rect, width: number, height: number,
-  obstacles: Rect[], segments: [number, number, number, number][]): Rect | null {
+  obstacles: Rect[], segments: [number, number, number, number][], anchorMarkers: Rect[] = []): Rect | null {
   if (width > bounds.w || height > bounds.h) return null;
   const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w + 6 && a.x + a.w + 6 > b.x &&
     a.y < b.y + b.h + 6 && a.y + a.h + 6 > b.y;
@@ -56,7 +56,9 @@ export function placeCallout(anchor: { x: number; y: number }, bounds: Rect, wid
     if (obstacles.some(o => overlap(box, o)) || nearby(box).some(i => waypointLineIntersects(segments[i], box, 7))) continue;
     const end = { x: Math.max(x, Math.min(x + width, anchor.x)), y: Math.max(y, Math.min(y + height, anchor.y)) };
     const leader: [number, number, number, number] = [anchor.x, anchor.y, end.x, end.y];
-    if (obstacles.some(o => waypointLineIntersects(leader, o, 2)) || nearby(extent(leader, 2)).some(i => crossesLeader(anchor, end, segments[i]))) continue;
+    // Линия может выйти из маркера собственного якоря; карточка по-прежнему не перекрывает его.
+    if (obstacles.some(o => !(anchorMarkers.includes(o) && anchor.x >= o.x && anchor.x <= o.x + o.w && anchor.y >= o.y && anchor.y <= o.y + o.h)
+      && waypointLineIntersects(leader, o, 2)) || nearby(extent(leader, 2)).some(i => crossesLeader(anchor, end, segments[i]))) continue;
     if (d < score) { best = box; score = d; }
   }
   return best;

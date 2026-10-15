@@ -68,7 +68,8 @@ export function drawCinematicGeography(ctx: CanvasRenderingContext2D, frame: Fra
   const place = enrichment.placeAt(idx), country = enrichment.countryAt(idx);
   const title = frame.act === 'outro' ? t(lang, 'film.lastPoint') : place ?
     `${t(lang, 'label.city')}: ${placeName(lang, place)}` : country ? countryName(lang, country) : t(lang, 'film.coordinate');
-  const coords = `${p.lat.toFixed(4)}° / ${p.lon.toFixed(4)}°`;
+  const precision = mark ? 1 : 4;
+  const coords = `${p.lat.toFixed(precision)}° / ${p.lon.toFixed(precision)}°`;
   const detail = !mark && p.ele !== undefined && Number.isFinite(p.ele) ?
     `${coords} · ${formatAltitude(lang, p.ele)}` : coords;
   ctx.font = `600 ${sizes.calloutTitle}px ${style.fonts.label}`;
@@ -82,14 +83,25 @@ export function drawCinematicGeography(ctx: CanvasRenderingContext2D, frame: Fra
     if (model.transferSeg[k - 1] || !model.have[k - 1] || !model.have[k]) continue;
     segments.push([model.sx[k - 1] * 2, model.sy[k - 1] * 2, model.sx[k] * 2, model.sy[k] * 2]);
   }
+  // Габариты drawStart/drawFinish (track.ts), включая обводку, из CSS- в дизайн-пиксели.
+  const markers: Rect[] = [];
+  if (model.n >= 2) {
+    const last = model.n - 1;
+    const r = style.marker.radius * 1.5 + Math.max(2, style.marker.ringWidth / 2 * 1.6) + 2.4;
+    if (model.have[0]) markers.push({ x: model.sx[0] * 2 - r, y: model.sy[0] * 2 - r, w: r * 2, h: r * 2 });
+    if (model.have[last] && (frame.showFinish || (mark && frame.act !== 'journey'))) {
+      markers.push({ x: model.sx[last] * 2 - 14, y: model.sy[last] * 2 - 66, w: 56, h: 80 });
+    }
+  }
   const reserved: Rect[] = [chapter ?? l.caption, l.stats, l.profile,
+    ...markers,
     ...(model.labelBoxes ?? []).map(r => ({ x: r.x * 2, y: r.y * 2, w: r.w * 2, h: r.h * 2 })),
     { x: l.work.x, y: legendTop, w: l.work.w, h: sizes.legendHeight },
     overlayAttributionRect(ctx, frame, { route, enrichment, settings, style, reconstruction }),
     ...(frame.act !== 'journey' ? [l.title, l.summary] : [])];
   const bounds = frame.act !== 'journey' && l.summaryDock === 'right' ?
     { ...l.work, w: l.summary.x - 20 - l.work.x } : l.work;
-  const box = placeCallout(point, bounds, w, h, reserved, segments);
+  const box = placeCallout(point, bounds, w, h, reserved, segments, markers);
   if (box) {
     const x = Math.max(box.x, Math.min(box.x + box.w, point.x));
     const y = Math.max(box.y, Math.min(box.y + box.h, point.y));

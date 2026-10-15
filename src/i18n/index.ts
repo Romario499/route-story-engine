@@ -127,7 +127,12 @@ export function beatTitle(lang: Lang, beat: Beat, opts: BeatTitleOptions = {}): 
 
 /** Подпись смены транспорта на маршруте по меткам: уницикл — предположение, неизвестный способ назван неизвестным. */
 export function transportTitle(lang: Lang, change: Pick<TransportChange, 'kind'>): string {
-  return t(lang, change.kind === 'train' ? 'transport.train' : change.kind === 'unicycle' ? 'transport.unicycle' : 'transport.unknown');
+  return t(lang, change.kind === 'train' ? 'transport.train' : change.kind === 'unicycle' ? 'transport.unicycle' : 'transport.unknownLeg');
+}
+
+/** Надзаголовок карточки смены транспорта: у участка с неизвестным способом — сама оговорка «способ неизвестен» (остаётся видимой). */
+export function transportKicker(lang: Lang, change: Pick<TransportChange, 'kind'>): string {
+  return t(lang, change.kind === 'unknown' ? 'transport.unknown' : 'transport.change');
 }
 
 export function sourceLabel(lang: Lang, source: CaptionSource): string { return t(lang, `source.${source}`); }

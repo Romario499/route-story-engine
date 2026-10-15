@@ -2,7 +2,7 @@ import { RU, EN } from '../../src/i18n/messages';
 import { describe, expect, it } from 'vitest';
 import {
   OVERLAY_KEYS, attributionText, beatTitle, countryName, formatAltitude, formatDate, formatDateRange, formatDistance, formatSpeed,
-  placeName, t, transportTitle,
+  placeName, t, transportKicker, transportTitle,
 } from '../../src/i18n';
 import type { Beat, Country, Lang, Place, TransportChange } from '../../src/types';
 import { STYLES } from '../../src/render/styles';
@@ -160,7 +160,11 @@ describe('i18n — маршрут по меткам (ADR 0010)', () => {
     expect(transportTitle('en', change('train', 'stated'))).toBe('Train');
     expect(transportTitle('ru', change('unicycle', 'inferred'))).toMatch(/предположительно/);
     expect(transportTitle('en', change('unicycle', 'inferred'))).toMatch(/inferred/);
-    expect(transportTitle('ru', change('unknown', 'unknown'))).toBe('Способ неизвестен');
+    expect(transportTitle('ru', change('unknown', 'unknown'))).toBe('Следующий участок');
+    expect(transportTitle('en', change('unknown', 'unknown'))).toBe('Next leg');
+    expect(transportKicker('ru', change('unknown', 'unknown'))).toBe('Способ неизвестен');
+    expect(transportKicker('en', change('unknown', 'unknown'))).toBe('Mode unknown');
+    expect(transportKicker('ru', change('train', 'stated'))).toBe('Смена транспорта');
     expect(t('ru', 'transport.change')).toBe('Смена транспорта');
   });
 

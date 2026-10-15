@@ -2,6 +2,16 @@ import { expect, it } from 'vitest';
 import { placeCallout } from '../../src/render/callouts';
 import { waypointLineIntersects } from '../../src/render/waypoint-layer';
 
+it('карточка обходит собственный флаг, а линия выноски может выйти из него', () => {
+  const flag = { x: 166, y: 114, w: 56, h: 80 };
+  const bounds = { x: 10, y: 10, w: 380, h: 380 }, anchor = { x: 180, y: 180 };
+  expect(placeCallout(anchor, bounds, 140, 80, [flag], [])).toBeNull(); // обычную плашку пересекать нельзя
+  const box = placeCallout(anchor, bounds, 140, 80, [flag], [], [flag]);
+  expect(box).not.toBeNull();
+  expect(box!.x < flag.x + flag.w && box!.x + box!.w > flag.x &&
+    box!.y < flag.y + flag.h && box!.y + box!.h > flag.y).toBe(false);
+});
+
 it('линия-выноска не пересекает маршрут или плашку на пути к свободному прямоугольнику', () => {
   const anchor = { x: 180, y: 180 };
   const barrier: [number, number, number, number] = [210, 0, 210, 400];
