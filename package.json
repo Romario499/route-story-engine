@@ -1,7 +1,28 @@
 {
   "name": "route-story-engine",
+  "version": "1.0.0",
+  "description": "GPS track or travel waypoints → animated video story (9:16 / 16:9) right in the browser: MapLibre + Canvas + WebCodecs.",
+  "license": "MIT",
+  "author": "NRM",
+  "homepage": "https://romario499.github.io/route-story-engine/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Romario499/route-story-engine.git"
+  },
+  "keywords": [
+    "gps",
+    "gpx",
+    "kml",
+    "organic-maps",
+    "maplibre",
+    "webcodecs",
+    "video",
+    "travel",
+    "storytelling",
+    "typescript",
+    "vite"
+  ],
   "private": true,
-  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
