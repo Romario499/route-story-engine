@@ -7,13 +7,14 @@
 //   scene.canvas = дизайн × (pixelRatio / 2): при pixelRatio 2 это ровно размер файла.
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { LngLat, Map as MapLibreMap } from 'maplibre-gl';
-import { DESIGN_SIZE, MAP_VIEWPORT, type CameraState, type Enrichment, type Format, type FrameState, type Route, type StyleId, type StorySettings } from '../types';
+import { DESIGN_SIZE, FPS, MAP_VIEWPORT, type CameraState, type Enrichment, type Format, type FrameState, type Route, type StyleId, type StorySettings } from '../types';
 import { ensureFonts } from './fonts';
 import { drawOverlay } from './overlay';
 import { mapStyleFor, STYLES, type StyleDef } from './styles';
 import { drawTrackLayer, prepareTrack, type TrackModel } from './track';
-import { applyTiltShift, drawCinematicGeography } from './cinematic';
-import { layoutFor } from './layout';
+import { applyTiltShift, calloutChangeWindows, drawCinematicGeography, type CalloutSweep } from './cinematic';
+import { layoutFor, timelineOptionsFor, type Rect } from './layout';
+import { buildTimeline } from '../story';
 import { centerForAnchor, projectTrackPoint } from './projection';
 
 export interface Scene {
@@ -327,6 +328,61 @@ export async function createScene(
   let rendering = false;
   let renderRevision = 0;
   let composedThisTick = false;
+  let calloutSweep: CalloutSweep | undefined;
+  function journeySweep(): CalloutSweep {
+    if (calloutSweep) return calloutSweep;
+    const timeline = buildTimeline(route!, enrichment!, settings!, timelineOptionsFor(format, styleId));
+    // Separate, flat transform: no map mutations, tile requests or dependence on seek/render order.
+    // Waypoint cameras use map.project directly (the GPS anchor correction does not apply).
+    const tr = map.transform.clone();
+    tr.elevation = 0; tr.minElevationForCurrentTile = 0;
+    const heads: { x: number; y: number }[] = [];
+    const changes: number[] = [];
+    let previousContent: string | undefined;
+    const anchors: { x: number; y: number }[] = [];
+    const frames: FrameState[] = [];
+    const points: { x: number; y: number }[][] = [];
+    const introHeads: { x: number; y: number }[] = [];
+    const introReserved: Rect[] = [], introModel = prepareTrack(route!);
+    // Reuse the endpoint-label layout on a detached, tiny canvas; never touch the live model/map.
+    const measureCanvas = document.createElement('canvas');
+    measureCanvas.width = measureCanvas.height = 1;
+    const measureCtx = measureCanvas.getContext('2d')!;
+    for (let i = 0; i <= timeline.frameCount; i++) {
+      const frame = timeline.frameAt(i / FPS);
+      frames.push(frame);
+      const cam = cameraForTiles(frame.camera, styleId, true);
+      tr.center = new LngLat(...cam.center); tr.zoom = cam.zoom;
+      tr.pitch = cam.pitchDegrees ?? cam.pitch * STYLES[styleId].pitch; tr.bearing = cam.bearing;
+      const idx = frame.act === 'intro' ? 0 : frame.act === 'outro' ? route!.points.length - 1 : Math.floor(frame.head);
+      // Include act layouts/titles and the shot badge; even act boundaries have a hidden pause.
+      const content = frame.act === 'journey' ? frame.act : `${idx}:${frame.act}:${frame.shot?.number}`;
+      if (previousContent !== undefined && content !== previousContent) changes.push(i / FPS);
+      previousContent = content;
+      const anchor = route!.points[idx], a = tr.locationPoint(new LngLat(anchor.lon, anchor.lat));
+      anchors.push({ x: a.x * 2, y: a.y * 2 });
+      points.push(frame.act === 'journey' ? route!.points.map(p => {
+        const a = tr.locationPoint(new LngLat(p.lon, p.lat));
+        return { x: a.x * 2, y: a.y * 2 };
+      }) : []);
+      if (frame.act === 'journey') {
+        const p = tr.locationPoint(new LngLat(...frame.headLonLat));
+        heads.push({ x: p.x * 2, y: p.y * 2 });
+      } else if (frame.act === 'intro') {
+        const end = route!.points.at(-1)!, p = tr.locationPoint(new LngLat(end.lon, end.lat));
+        introHeads.push({ x: a.x * 2, y: a.y * 2 }, { x: p.x * 2, y: p.y * 2 });
+        drawTrackLayer({ ctx: measureCtx, model: introModel, route: route!, enrichment,
+          lang: settings!.lang, frame, style: STYLES[styleId], view: vp, endpointLabels: true,
+          project: (lon, lat) => tr.locationPoint(new LngLat(lon, lat)) });
+        for (const r of introModel.labelBoxes ?? []) {
+          introReserved.push({ x: r.x * 2, y: r.y * 2, w: r.w * 2, h: r.h * 2 });
+        }
+      }
+    }
+    return calloutSweep = { heads, anchors, changes: calloutChangeWindows(changes),
+      candidates: { frames, points },
+      intro: { heads: introHeads, reserved: introReserved } };
+  }
 
   const nextMapEvent = (ms: number) => new Promise<void>((resolve) => {
     const finish = () => {
@@ -426,7 +482,7 @@ export async function createScene(
             map.queryTerrainElevation({ lng: frame.headLonLat[0], lat: frame.headLonLat[1] }) !== null;
           drawCinematicGeography(ctx, frame, route, enrichment, settings, style,
             (lon, lat) => map.project([lon, lat]), model, dem, reconstruction,
-            map.terrain?.exaggeration ?? 1);
+            map.terrain?.exaggeration ?? 1, journeySweep);
         }
         drawOverlay(ctx, frame, { route, enrichment, settings, style, reconstruction });
       }
@@ -488,6 +544,7 @@ export async function createScene(
     async setStyle(id) {
       if (destroyed || id === styleId) return;
       styleId = id;
+      calloutSweep = undefined;
       const loaded = new Promise<void>((resolve) => map.once('style.load', () => resolve()));
       map.setStyle(mapStyleFor(id, pixelRatio, true), { diff: false });
       await loaded;
@@ -500,6 +557,7 @@ export async function createScene(
     },
 
     setData(r, e, s, isReconstruction) {
+      if (r !== route || e !== enrichment || s !== settings) calloutSweep = undefined;
       if (r !== route) model = prepareTrack(r);
       route = r; enrichment = e; settings = s; reconstruction = isReconstruction;
       if (lastFrame && !destroyed && !rendering && visibleTilesReady(map)) compose(lastFrame);

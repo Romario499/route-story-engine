@@ -190,8 +190,8 @@ export function waypointOverviewObstacles(format: Format, style: StyleDef, purpo
   ];
 }
 
-/** Тот же событийный слот; дополнительные строки главы помещаются до области карты. */
+/** Страна становится компактным заголовком над главой в общей верхней зоне. */
 export function chapterCaptionRect(format: Format, styleId?: StyleId): Rect {
   const r = layoutFor(format, styleId).caption;
-  return { ...r, h: 210 };
+  return { ...r, y: r.y + 56, h: 210 };
 }

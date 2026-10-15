@@ -683,14 +683,16 @@ function drawPlaque(env: Env, country: Country, alpha: number, dy: number): void
   const { ctx, style, skin, layout } = env;
   const area = layout.caption;
   const atlas = style.id === 'atlas';
-  const flagH = (atlas ? 46 : style.id === 'neon' ? 54 : 58) * layout.readability.countryScale;
+  const compact = env.frame.act === 'journey' && !!env.data.route.chapters?.length;
+  const rowH = compact ? 44 : PLAQUE_ROW_H;
+  const flagH = compact ? 28 : (atlas ? 46 : style.id === 'neon' ? 54 : 58) * layout.readability.countryScale;
   const flagW = flagH * (4 / 3);
-  const nameSize = (style.id === 'epic' ? 64 : 60) * layout.readability.countryScale;
+  const nameSize = compact ? 36 : (style.id === 'epic' ? 64 : 60) * layout.readability.countryScale;
   ctx.save();
   ctx.globalAlpha *= alpha;
   const y = area.y + dy;
-  drawFlag(env, country.iso2, area.x, y + (PLAQUE_ROW_H - flagH) / 2, flagW, flagH, atlas ? 4 : 9);
-  text(env, shortCountryName(env.lang, country), area.x + flagW + 22, y + PLAQUE_ROW_H / 2 + nameSize * 0.34, {
+  drawFlag(env, country.iso2, area.x, y + (rowH - flagH) / 2, flagW, flagH, atlas ? 4 : 9);
+  text(env, shortCountryName(env.lang, country), area.x + flagW + 22, y + rowH / 2 + nameSize * 0.34, {
     role: 'title', size: nameSize, color: skin.ink, maxW: area.w - flagW - 22, minSize: 34,
   });
   ctx.restore();
@@ -755,14 +757,15 @@ interface ChapterGeometry {
 }
 const chapterGeometryCache = new WeakMap<Chapter, Map<string, ChapterGeometry>>();
 function chapterGeometryKey(env: Env): string {
-  return `${env.layout.format}|${env.style.id}|${env.lang}|${env.k}`;
+  return `${env.layout.format}|${env.style.id}|${env.lang}|${env.k}|${env.frame.act === 'outro'}`;
 }
 function chapterGeometry(env: Env, chapter: Chapter) {
   let cache = chapterGeometryCache.get(chapter);
   if (!cache) { cache = new Map(); chapterGeometryCache.set(chapter, cache); }
   const key = chapterGeometryKey(env), hit = cache.get(key);
   if (hit) return hit;
-  const area = chapterCaptionRect(env.layout.format, env.style.id);
+  const area = env.frame.act === 'outro' ? { ...env.layout.caption, h: 210 }
+    : chapterCaptionRect(env.layout.format, env.style.id);
   const cap = chapterCaption(env.lang, chapter);
   const lines: { str: string; role: 'title' | 'label'; size: number; min: number; baseline: number }[] = [];
   let bottom = area.y + 24;
@@ -784,15 +787,21 @@ function chapterGeometry(env: Env, chapter: Chapter) {
     }
     baseline += 6;
   }
-  const geometry = { area, cap, lines, rect: { ...area, h: bottom - area.y } };
+  // Include the simultaneous country plaque in the obstacle used by geography.
+  const top = env.frame.act === 'outro' ? area.y : env.layout.caption.y;
+  const geometry = { area, cap, lines, rect: { ...area, y: top, h: bottom - top + 8 } };
   cache.set(key, geometry);
   return geometry;
 }
 
 function drawChapterCaption(env: Env, chapter: Chapter, alpha: number): void {
   const { ctx, skin, style } = env;
-  const { area, cap, lines } = chapterGeometry(env, chapter);
+  const { area, cap, lines, rect } = chapterGeometry(env, chapter);
   ctx.save(); ctx.globalAlpha *= alpha;
+  // Two layers of the existing card palette keep route icons quiet under the text.
+  ctx.fillStyle = style.palette.cardBg;
+  ctx.fillRect(area.x - 8, area.y - 8, area.w + 16, rect.y + rect.h - area.y + 8);
+  ctx.fillRect(area.x - 8, area.y - 8, area.w + 16, rect.y + rect.h - area.y + 8);
   const tone = chapterToneFor(style.id, env.frame.chapterMood);
   const accent = tone.strength > 0.01 && style.id === 'atlas' ? `rgb(${tone.rgb.map(Math.round).join(',')})` : skin.accent;
   text(env, cap.source, area.x, area.y + 20, { role: 'secondary', size: 20, color: accent, maxW: area.w, minSize: 18 });
@@ -1098,6 +1107,11 @@ function statsGeometry(env: Env, items: StatItem[]): StatsGeo {
   return { rows, cols, rowH, cellW, left: layout.stats.x, top, bottom, valueSize, labelSize, iconSize, textDx, textW };
 }
 
+/** Видимость показателя 0..1: «Рядом» у маршрута по меткам гаснет вместе с названием города; остальные — всегда 1. */
+function statVisibility(env: Env, it: StatItem): number {
+  return it.place && isWaypointRoute(env.data.route) ? clamp01(it.place.curAlpha + it.place.prevAlpha) : 1;
+}
+
 function drawStats(env: Env, items: StatItem[], g: StatsGeo, strength: number): void {
   if (strength <= 0.004 || !items.length) return;
   const { ctx, skin, style } = env;
@@ -1107,15 +1121,29 @@ function drawStats(env: Env, items: StatItem[], g: StatsGeo, strength: number): 
   ctx.translate(0, (1 - strength) * rise);
 
   // тонкие разделители: между колонками; у «Атласа» и «Неона» — ещё над сеткой и между рядами
+  // Ряд, где все показатели погашены («Рядом» по меткам), не рисует ни разделителей, ни линий; место под ним остаётся занятым (блок не прыгает),
+  // а разделитель колонок и линия ряда растут и убывают плавно вместе с видимостью ряда.
+  const rowVis = Array.from({ length: g.rows }, (_, r) => {
+    const row = items.slice(r * g.cols, (r + 1) * g.cols);
+    return row.length ? Math.max(...row.map((it) => statVisibility(env, it))) : 0;
+  });
+  const visibleRows = rowVis.reduce((a, b) => a + b, 0);
   ctx.strokeStyle = skin.rule;
   ctx.lineWidth = 1.6;
   ctx.beginPath();
-  if (g.cols > 1) { ctx.moveTo(g.left + g.cellW - 15, g.top + 6); ctx.lineTo(g.left + g.cellW - 15, g.bottom - 14); }
+  if (g.cols > 1 && visibleRows > 0.004) { ctx.moveTo(g.left + g.cellW - 15, g.top + 6); ctx.lineTo(g.left + g.cellW - 15, Math.max(g.top + 6, g.top + visibleRows * g.rowH - 14)); }
   if (skin.rowRules) {
     ctx.moveTo(g.left, g.top - 6); ctx.lineTo(g.left + g.cols * g.cellW, g.top - 6);
-    for (let r = 1; r < g.rows; r++) { ctx.moveTo(g.left, g.top + r * g.rowH - 8); ctx.lineTo(g.left + g.cols * g.cellW, g.top + r * g.rowH - 8); }
   }
   ctx.stroke();
+  if (skin.rowRules) {
+    for (let r = 1; r < g.rows; r++) {
+      if (rowVis[r] <= 0.004) continue;
+      ctx.save(); ctx.globalAlpha *= rowVis[r];
+      ctx.beginPath(); ctx.moveTo(g.left, g.top + r * g.rowH - 8); ctx.lineTo(g.left + g.cols * g.cellW, g.top + r * g.rowH - 8); ctx.stroke();
+      ctx.restore();
+    }
+  }
 
   items.forEach((it, i) => {
     const col = i % g.cols, row = Math.floor(i / g.cols);
@@ -1126,7 +1154,7 @@ function drawStats(env: Env, items: StatItem[], g: StatsGeo, strength: number): 
     const valueBase = cy0 + 6 + g.valueSize * 0.78;
     const labelBase = valueBase + 14 + g.labelSize * 0.78;
     // «Рядом» у маршрута по меткам: нет города (или он гасится как дубль подписи события) — нет и значка, и подписи, и прочерка
-    const nearVisible = it.place && isWaypointRoute(env.data.route) ? clamp01(it.place.curAlpha + it.place.prevAlpha) : 1;
+    const nearVisible = statVisibility(env, it);
     if (nearVisible <= 0.004) return;
     if (skin.icons || it.icon === 'tent') {
       // Только ночёвки: значок относится к числу, а не к левому краю широкой ячейки. GPS-показатели сохраняют геометрию.
@@ -1649,7 +1677,7 @@ function overlayPhases(frame: FrameState, settings: StorySettings, style: StyleD
   const card = frame.cards[0];
   const shown = card && !(card.beat.kind === 'country' && settings.info.country) ? card : null;
   const raw = shown ? clamp01(shown.alpha) : 0;
-  return { outro, hud, shown, raw, plaqueShare: 1 - smooth(raw / SLOT_SPLIT),
+  return { outro, hud, shown, raw, plaqueShare: shown?.chapter ? 1 : 1 - smooth(raw / SLOT_SPLIT),
     cardAlpha: smooth((raw - SLOT_SPLIT) / (1 - SLOT_SPLIT)) };
 }
 
@@ -1742,8 +1770,7 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, frame: FrameState, da
 
   if (hud > 0.004) {
     // при включённой «Стране» въезд показывает плашка — отдельная карточка была бы дублем
-    // слот один: плашка страны гаснет до нуля, пока карточка набирает первую треть яркости, и возвращается после неё —
-    // обе не бывают видны одновременно (никакого наложения друг на друга в одном месте)
+    // Обычные события заменяют плашку; глава занимает отдельную зону ниже неё.
     // показатели пути — только когда голова пошла по маршруту (на спуске к старту она может стоять под зоной показателей)
     const moving = isWaypointRoute(data.route) && !data.route.waypointOrderConfirmed ? 1 : smooth(frame.stats.progress / 0.012);
     const stats = hud * moving;
@@ -1763,11 +1790,12 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, frame: FrameState, da
     }
     ctx.restore();
 
-    // слот сверху: плашка страны, а на время события — событийная подпись (одна за раз)
+    // Плашка страны остаётся видимой во время главы в отдельной зоне.
     drawCountryPlaque(env, hud * plaqueShare);
     if (shown && cardAlpha > 0.004) drawEventCard(env, { ...shown, alpha: cardAlpha }, 1); // карточки бывают только в пути
-    drawGapNote(env, hud, shown?.chapter ? 1 - plaqueShare : raw);
-    drawWaypointNote(env, hud, shown?.chapter ? 1 - plaqueShare : raw);
+    const noteAlpha = shown?.chapter ? smooth(raw / SLOT_SPLIT) : raw;
+    drawGapNote(env, hud, noteAlpha);
+    drawWaypointNote(env, hud, noteAlpha);
 
     // «рядом» не повторяет название места из событийной подписи
     const dup = shown && !shown.chapter && (shown.beat.kind === 'start' || shown.beat.kind === 'finish' || shown.beat.kind === 'waypoint') ? 1 - raw : 1;

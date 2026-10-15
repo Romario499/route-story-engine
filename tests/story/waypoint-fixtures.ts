@@ -1,7 +1,7 @@
 // Синтетика «маршрута по меткам» (никаких настоящих координат путешественника): цепочки меток на параллели,
 // собираются настоящим buildRoute из JourneyWaypoint — так форма Route совпадает с боевой (source.kind = 'waypoints').
 import { buildRoute } from '../../src/route';
-import type { EvidenceConfidence, JourneyWaypoint, Route, WaypointKind } from '../../src/types';
+import type { Chapter, EvidenceConfidence, JourneyWaypoint, Route, WaypointKind } from '../../src/types';
 import { ok } from './fixtures';
 
 export const DAY = 86_400_000;
@@ -30,6 +30,15 @@ export function waypointRoute(points: JourneyWaypoint[]): Route {
 /** Фикстура именно подтверждённой последовательности; основной импорт остаётся обзором. */
 export function confirmedWaypointRoute(points: JourneyWaypoint[]): Route {
   return { ...waypointRoute(points), waypointOrderConfirmed: true };
+}
+
+export function sevenChapterRoute(): Route {
+  const r = confirmedWaypointRoute(Array.from({ length: 100 }, (_, i) => jw(40, 20 + i * 0.7, i >= 48 && i <= 52 ? 'train' : 'overnight', i)));
+  r.chapters = [0, 12, 25, 40, 53, 68, 87].map((from, i): Chapter => ({
+    id: `synthetic-${i}`, title: { ru: 'Глава', en: 'Chapter' }, text: { ru: 'Вымышленный регион.', en: 'A fictional region.' },
+    source: 'traveler', mood: 'rain', anchor: { countries: ['GE'], markedAt: { from: D0 + from * DAY, to: D0 + (from + 10) * DAY } },
+  }));
+  return r;
 }
 
 /**

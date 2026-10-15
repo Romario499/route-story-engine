@@ -11,7 +11,7 @@ import { jw, confirmedWaypointRoute as waypointRoute } from '../story/waypoint-f
 import { recorder } from './overlay-recorder';
 import type { Chapter } from '../../src/types';
 const chapter: Chapter = { id:'fiction',title:{ru:'Придуманная глава',en:'Fictional chapter'},text:{ru:'Вымышленная история.',en:'A fictional story.'},source:'traveler',mood:'cold',anchor:{countries:['GE']} };
-it('глава рисует титр, краткий текст и источник RU/EN в одном слоте, тон плавный в обоих стилях, финал без сравнений', () => {
+it('компактная страна и глава видны одновременно RU/EN в обоих форматах; финал без сравнений', () => {
   const route = waypointRoute(Array.from({length:16},(_,i)=>jw(40,30+i*0.3,'overnight',i)));
   route.chapters=[chapter,{...chapter,id:'warm',mood:'warmth',anchor:{countries:['AM']}},{...chapter,id:'final',finale:true}];
   const env=enrichmentFor(route);
@@ -24,11 +24,22 @@ it('глава рисует титр, краткий текст и источн�
     for(let i=1;i<tones.length;i++) for(let k=0;k<3;k++) expect(Math.abs(tones[i].rgb[k]*tones[i].strength-tones[i-1].rgb[k]*tones[i-1].strength)).toBeLessThan(2);
     const frame=frames.find(f=>f.cards[0]?.chapter?.id==='fiction' && f.cards[0].alpha===1)!;
     const rec=recorder();
+    rec.ctx.fillRect = (x, y, w, h) => rec.fills.push({ x, y, w, h, alpha: rec.ctx.globalAlpha });
     drawOverlay(rec.ctx,frame,{route,enrichment:env,settings:cfg,style:styles.STYLES[styleId],reconstruction:false});
     expect(rec.texts.join(' ')).toContain(chapter.title[lang]);
     expect(rec.texts.join(' ')).toContain(chapter.text[lang]);
     expect(rec.texts.join(' ')).toContain(t(lang,'source.traveler'));
-    expect(rec.texts.join(' ')).not.toContain(lang==='ru'?'Грузия':'Georgia');
+    const countryName = lang === 'ru' ? 'Грузия' : 'Georgia';
+    expect(rec.texts).toContain(countryName);
+    const countryRects = rec.textRects.filter(r => r.text === countryName);
+    const chapterRects = rec.textRects.filter(r => [chapter.title[lang], chapter.text[lang], t(lang, 'source.traveler')].includes(r.text));
+    for (const caption of chapterRects) {
+      expect(rec.fills.some(r => r.x <= caption.x && r.y <= caption.y
+        && r.x + r.w >= caption.x + caption.w && r.y + r.h >= caption.y + caption.h)).toBe(true);
+    }
+    for (const country of countryRects) for (const caption of chapterRects) {
+      expect(caption.y).toBeGreaterThan(country.y + country.h + 12);
+    }
     const fin=recorder();drawOverlay(fin.ctx,tl.frameAt(30),{route,enrichment:env,settings:cfg,style:styles.STYLES[styleId],reconstruction:false});
     expect(fin.texts.join(' ')).toContain(chapter.text[lang]);
     for(const r of rec.textRects) if([chapter.title[lang],chapter.text[lang],t(lang,'source.traveler')].includes(r.text)) { expect(r.x+r.w).toBeLessThanOrEqual(format==='9:16'?900:1824); expect(r.y).toBeGreaterThanOrEqual(format==='9:16'?240:72); }
@@ -109,10 +120,12 @@ it.each(['9:16', '16:9'] as const)('%s: многострочная глава и
   const ys = { journey: new Set<number>(), outro: new Set<number>() };
   const phases = new Set<string>();
   const shownChapters = new Set<string>();
-  let legend: Rect;
-  geography.ctx.fillRect = (x, y, w, h) => { legend = { x, y, w, h }; };
+  let legend: Rect | undefined;
+  // Geography draws the legend first, then may draw a callout background.
+  geography.ctx.fillRect = (x, y, w, h) => { legend ??= { x, y, w, h }; };
   for (const frame of frames) {
     if (frame.act === 'intro') continue;
+    legend = undefined;
     drawCinematicGeography(geography.ctx, frame, route, enrichment, cfg, style,
       () => ({ x: -100, y: -100 }), model, true, false);
     ys[frame.act].add(legend!.y);

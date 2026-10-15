@@ -12,8 +12,8 @@
 | `npm run preview -- --port 4174 --strictPort` | отдать `dist/` (нужна сборка) |
 | `npm test` | Vitest, все юниты |
 | `npx vitest run tests/route/parse.test.ts` | один тестовый файл |
-| `npm run check` | `tsc --noEmit` + `vitest run` (то же гоняет CI перед деплоем); сейчас 56 файлов, 683 passed |
-| `npm run test:e2e` | Playwright в настоящем Edge (`channel: 'msedge'`; Chrome: `RS_E2E_CHANNEL=chrome`); сам делает `npm run build` и поднимает `vite preview` :4173; 21 тест, ~3 мин; иногда зависает на остановке preview уже после зелёного прогона |
+| `npm run check` | `tsc --noEmit` + `vitest run` (то же гоняет CI перед деплоем); сейчас 75 файлов, 842 passed |
+| `npm run test:e2e` | Playwright в настоящем Edge (`channel: 'msedge'`; Chrome: `RS_E2E_CHANNEL=chrome`); сам делает `npm run build` и поднимает `vite preview` :4173; 28 тестов; иногда зависает на остановке preview уже после зелёного прогона |
 | `npm run exports` | снимает `exports/redesign/*.mp4` через UI (Edge, интернет, 2–4 мин на файл) — см. «Подводные камни» про перезапись |
 | `npm run build:geodata` / `npm run build:sample` | пересобирают `public/data/*.json` и пример GPX; ходят в сеть, результат закоммичен — не запускать без нужды |
 | `node scripts/waypoints-sample.mjs <файл.kmz> --report` | сводка по бэкапу Organic Maps без координат; выборка участка: `--segment <YYYY-MM-DD> <YYYY-MM-DD> [--country ISO2 \| --bbox minLon minLat maxLon maxLat] [--out private/wahrier/<имя>.json]` (не перезаписывает существующий файл) |

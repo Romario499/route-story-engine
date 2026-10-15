@@ -6,15 +6,21 @@ import {
   type ActiveCard, type Beat, type BeatKind, type Country, type Enrichment, type FrameState, type FrameStats, type Place,
   type Route, type StorySettings, type TransportChange,
 } from '../types';
-import { chapterMoodAt, matchChapters, paceWithChapterReading } from './chapters';
+import { chapterMoodAt, matchChapters, paceWithChapterReading, type ReadingBudget } from './chapters';
 import { beatTitle, transportTitle } from '../i18n';
-import { easeInOut, journeyCamera, journeyViewM, journeyZoom, overviewCamera, toCamera, transition, type Mcam } from './camera';
+import { averagedSamples, cameraCubic, easeInOut, journeyCamera, journeyViewM, journeyZoom, overviewCamera, planWaypointCenter, planWaypointZoom, toCamera, transition, waypointChapterZoom, WAYPOINT_ZOOM_SPEED, type Mcam } from './camera';
 import { factsAt, HOP_VIEW_RATIO, journeyFacts, overviewLabels, waypointPacingRoute, WAYPOINT_TRANSFER_COST } from './legs';
 import { latOf, lonOf, mercX, mercY, type Padding } from './mercator';
-import { planPace, type Dwell, type PacePlan } from './pace';
+import { costShares, planPace, type Dwell, type PacePlan } from './pace';
 import { directedJourney, regionOverview, shotAt } from './director';
 
-export interface Timeline { durationSec: number; frameCount: number; frameAt(t: number): FrameState }
+export interface Timeline {
+  durationSec: number; frameCount: number; frameAt(t: number): FrameState;
+  /** Numeric acceptance diagnostics; never used to change the narrative. Times are film seconds. */
+  waypointCameraPlan?: { diveFrom: number; diveTo: number; pullFrom: number; pullTo: number;
+    windows: { start: number; plateauStart: number; plateauEnd: number; end: number; amplitude: number }[] };
+  waypointTiming?: { feasible: boolean; requiredSec: number; availableSec: number };
+}
 export interface TimelineOptions {
   /** V5 режиссура; legacy прямой вызов без опций — false, timelineOptionsFor — true. */
   cinematic?: boolean;
@@ -57,6 +63,7 @@ const TITLE_FADE_SEC = 0.6;
  * Всё это время «голова» стоит на старте — видно масштаб, а старт остаётся в кадре.
  */
 const START_HOLD_SHARE = 0.17;
+const WAYPOINT_START_HOLD_SHARE = 0.06;
 /** Отъезд к полному маршруту кончается к началу финала (история 79): длина — доля путешествия в пределах. */
 const PULL_SHARE = 0.17;
 const PULL_MIN_SEC = 2.0;
@@ -205,7 +212,8 @@ export function buildTimeline(
   const journeySec = journeyEnd - introEnd;
   const outroHold = OUTRO_HOLD_SEC(D);
   const pullLen = Math.max(PULL_MIN_SEC, Math.min(PULL_MAX_SEC, PULL_SHARE * journeySec));
-  const startHold = START_HOLD_SHARE * journeySec;
+  const countryReading = route.source?.kind === 'waypoints' && route.waypointOrderConfirmed === true && D === 60;
+  const startHold = countryReading ? 0.3 : (route.source?.kind === 'waypoints' ? WAYPOINT_START_HOLD_SHARE : START_HOLD_SHARE) * journeySec;
   /** Когда «голова» трогается со старта. */
   const moveStart = introEnd + startHold;
 
@@ -224,8 +232,9 @@ export function buildTimeline(
       const u = smoothstep((t - introEnd) / journeySec);
       const x = mercX(route.bbox[0]) + (mercX(route.bbox[2]) - mercX(route.bbox[0])) * u;
       const focus = { ...overview, x, zoom: overview.zoom + 0.6 };
-      const camera = opts.cinematic ? regionOverview(route, overview, t, introEnd, journeyEnd) :
+      const rawCamera = opts.cinematic ? regionOverview(route, overview, t, introEnd, journeyEnd) :
         act === 'journey' ? transition(overview, focus, Math.sin(Math.PI * u) ** 2) : overview;
+      const camera = { ...rawCamera, zoom: Math.min(8, rawCamera.zoom) };
       // Служебная голова — метка у центра обзора; плашку и город отдельно определяет область кадра.
       let head = 0, best = Infinity;
       pts.forEach((p, i) => { const d = (mercX(p.lon) - camera.x) ** 2 + (mercY(p.lat) - camera.y) ** 2;
@@ -303,8 +312,30 @@ export function buildTimeline(
 
   const countryStops = facts ? pts.flatMap((_, i) => i > 0 && i < last
     && !sameCountry(enrichment.countryAt(i - 1), enrichment.countryAt(i)) ? [i] : []) : [];
-  const makePace = (list: Beat[]) => withCountryHolds(
-    planPace(pacing, moveSec, dwellsOf(list), facts ? WAYPOINT_TRANSFER_COST : undefined), countryStops);
+  const matched = matchChapters(route, enrichment);
+  const readingSec = (c: NonNullable<Route['chapters']>[number]) => Math.max(READ_MIN_SEC,
+    (c.title[settings.lang].length + c.text[settings.lang].length) / 28) + CARD_FADE_IN_SEC + CARD_FADE_OUT_SEC + CARD_GAP_SEC;
+  const runs: { fromIdx: number; toIdx: number }[] = [];
+  if (countryReading) for (let i = 0; i <= last; i++) {
+    const c = enrichment.countryAt(i);
+    if (!c) continue;
+    const prev = runs.at(-1);
+    if (prev && prev.toIdx === i - 1 && sameCountry(enrichment.countryAt(prev.fromIdx), c)) prev.toIdx = i;
+    else runs.push({ fromIdx: i, toIdx: i });
+  }
+  // Country labels remain visible during chapters. Only ordinary cards are excluded
+  // from the reserved tails; two extra frames protect inclusive frame sampling.
+  const readingBudget: ReadingBudget | undefined = countryReading ? { runs, last, labelSec: 3 + 2 / FPS,
+    firstDelaySec: START_CARD_DELAY_SEC, positionWeights: costShares(pacing, WAYPOINT_TRANSFER_COST).u } : undefined;
+  const makePace = (list: Beat[]) => {
+    const base = planPace(pacing, moveSec, dwellsOf(list), facts ? WAYPOINT_TRANSFER_COST : undefined);
+    if (!readingBudget) return withCountryHolds(base, countryStops);
+    const reserved = paceWithChapterReading(base, matched, moveSec, readingSec, readingBudget);
+    // An infeasible country budget must not also discard the accepted chapter reading.
+    // Keep the failure in waypointTiming; this fallback does not claim country coverage.
+    return readingBudget.result?.feasible ? reserved
+      : paceWithChapterReading(base, matched, moveSec, readingSec);
+  };
   let shown = beats;
   let pace = makePace(shown);
   let countrySteps = countryStepsOf(pace);
@@ -317,7 +348,6 @@ export function buildTimeline(
   }
 
   // Главы не добавляют стоянок: при нехватке чтения перераспределяется непрерывное движение.
-  const matched = matchChapters(route, enrichment);
   const scheduleChapters = (): { chapter: NonNullable<Route['chapters']>[number]; start: number; end: number; idx: number }[] => {
     const chapterCards: { chapter: NonNullable<Route['chapters']>[number]; start: number; end: number; idx: number }[] = [];
     const seen = new Set<string>();
@@ -328,7 +358,8 @@ export function buildTimeline(
       const read = Math.max(READ_MIN_SEC, (m.chapter.title[settings.lang].length + m.chapter.text[settings.lang].length) / 28);
       const end = start + CARD_FADE_IN_SEC + read + CARD_FADE_OUT_SEC;
       // Нельзя переносить воспоминание в другую страну/регион ради заполнения слота.
-      const leave = m.toIdx < last ? moveStart + pace.timeOfIdx(m.toIdx) : journeyEnd;
+      const leave = m.toIdx < last ? moveStart + (m.fromIdx === m.toIdx && pace.departureOfIdx
+        ? pace.departureOfIdx(m.toIdx) : pace.timeOfIdx(m.toIdx)) : journeyEnd;
       if (end > Math.min(journeyEnd, leave)) continue;
       chapterCards.push({ chapter: m.chapter, start, end, idx: m.fromIdx });
       seen.add(m.chapter.id);
@@ -338,11 +369,18 @@ export function buildTimeline(
   };
   let chapterCards = scheduleChapters();
   const wanted = new Set(matched.filter(m => !m.chapter.finale).map(m => m.chapter.id)).size;
-  if (chapterCards.length < wanted) {
+  if (chapterCards.length < wanted && !readingBudget) {
     pace = paceWithChapterReading(pace, matched, moveSec, c => Math.max(READ_MIN_SEC, (c.title[settings.lang].length + c.text[settings.lang].length) / 28) + CARD_FADE_IN_SEC + CARD_FADE_OUT_SEC + CARD_GAP_SEC);
     countrySteps = countryStepsOf(pace);
     cards = scheduleCards(candidatesOf(pace, shown, countrySteps), settings.lang, introEnd, journeyEnd);
     chapterCards = scheduleChapters();
+  }
+  if (readingBudget?.result?.feasible) {
+    const tails = runs.map(r => {
+      const end = moveStart + (r.fromIdx === r.toIdx ? pace.departureOfIdx!(r.toIdx) : pace.timeOfIdx(r.toIdx));
+      return { from: end - readingBudget.labelSec, to: end };
+    });
+    cards = cards.filter(c => c.beat.kind === 'country' || !tails.some(r => c.start < r.to && c.end > r.from));
   }
 
   const lonLatAt = (head: number): [number, number] => {
@@ -357,13 +395,21 @@ export function buildTimeline(
 
   // --- камера
   const overview = overviewCamera(route, viewport, opts.overviewPadding);
-  const baseZoom = Math.min(opts.maxJourneyZoom ?? 16.5, journeyZoom(pacing, viewport, pace.cruiseMps, overview.zoom));
+  const maxZoom = facts ? Math.min(opts.maxJourneyZoom ?? 16.5, 8) : opts.maxJourneyZoom ?? 16.5;
+  const chapterZoom = facts && chapterCards.length ? Math.min(maxZoom, Math.max(overview.zoom, waypointChapterZoom(route, viewport))) : undefined;
+  // Между главами — общий план; чтение не отодвигает региональный план камеры.
+  const baseZoom = Math.min(maxZoom, journeyZoom(pacing, viewport, pace.cruiseMps, overview.zoom),
+    chapterZoom === undefined ? Infinity : Math.max(overview.zoom, chapterZoom - 2));
   const jp = opts.journeyPadding;
   const baseJourney = journeyCamera({
     route: pacing, viewport, journeySec, baseZoom,
     headIdxAt: (tau) => pace.headAt(tau - startHold),
     beatTimes: cards.map((c) => c.start + CARD_FADE_IN_SEC - introEnd),
-    shiftPx: jp ? { x: (jp.left - jp.right) / 2, y: (jp.top - jp.bottom) / 2 } : undefined,
+    ...(chapterZoom === undefined ? {} : { chapterZoom,
+      chapterWindows: chapterCards.map(c => ({ start: c.start - introEnd, end: c.end - introEnd })),
+      chapterCameraBounds: { from: 0.8 - introEnd, to: journeySec - 0.5 } }),
+    // Waypoint HUD displacement is applied only after the final whole-film zoom.
+    shiftPx: jp && !facts ? { x: (jp.left - jp.right) / 2, y: (jp.top - jp.bottom) / 2 } : undefined,
   });
   const jcam = opts.cinematic && !facts ? directedJourney(pacing, D, introEnd, journeySec,
     tau => pace.headAt(tau - startHold), baseJourney, opts.maxJourneyZoom, opts.maxPitch) : baseJourney;
@@ -372,8 +418,9 @@ export function buildTimeline(
   // к общему плану, кончается к началу финала — маршрут раскрыт целиком до итоговой карточки. Оба — ease-in-out.
   const diveFrom = opts.cinematic ? 0.8 : Math.max(0, introEnd - TITLE_FADE_SEC);
   const diveTo = moveStart;
-  const pullFrom = journeyEnd - pullLen;
-  const pullTo = journeyEnd;
+  const pullTo = facts ? journeyEnd - 0.25 : journeyEnd;
+  const peakJourneyZoom = facts ? Math.max(...Array.from({ length: Math.ceil(journeySec * 60) + 1 }, (_, i) => jcam.at(Math.min(journeySec, i / 60)).zoom)) : 0;
+  const pullFrom = facts ? Math.max(diveTo, pullTo - 1.5 * Math.max(0, peakJourneyZoom - overview.zoom) / WAYPOINT_ZOOM_SPEED) : journeyEnd - pullLen;
   const rawCameraAt = (t: number): Mcam => {
     if (opts.cinematic && !facts) {
       const prologueEnd = 2.1 * D / 15, finaleStart = 12.4 * D / 15;
@@ -392,12 +439,12 @@ export function buildTimeline(
       return { ...c, pitch: (40 - 20 * e) / p * (1 - easeInOut((t - D + 0.6) / 0.6)) };
     }
     if (t < diveTo) {
-      const e = easeInOut((t - diveFrom) / (diveTo - diveFrom));
+      const e = (facts ? cameraCubic : easeInOut)((t - diveFrom) / (diveTo - diveFrom));
       return transition(overview, jcam.at(Math.max(0, t - introEnd)), e);
     }
     if (t < pullFrom) return jcam.at(t - introEnd);
     if (t >= pullTo) return overview;
-    const e = easeInOut((t - pullFrom) / (pullTo - pullFrom));
+    const e = (facts ? cameraCubic : easeInOut)((t - pullFrom) / (pullTo - pullFrom));
     return transition(jcam.at(Math.min(journeySec, t - introEnd)), overview, e);
   };
   // Сглаживаем стыки сцен на общей сетке, включая пролог/финал. Случайный seek
@@ -414,7 +461,7 @@ export function buildTimeline(
     }
     return { x: x / sum, y: y / sum, zoom: zoom / sum, pitch: pitch / sum, bearing: bearing / sum };
   });
-  const cameraAt = (t: number): Mcam => {
+  const legacyCameraAt = (t: number): Mcam => {
     if (!cameras) return rawCameraAt(t);
     if (t >= D) return overview;
     const q = Math.max(0, t * cameraHz), i = Math.min(cameraCount - 2, Math.floor(q)), f = q - i;
@@ -424,6 +471,26 @@ export function buildTimeline(
       zoom: a.zoom + (b.zoom - a.zoom) * f, pitch: (a.pitch + (b.pitch - a.pitch) * f) * endFade,
       bearing: ((a.bearing ?? 0) + ((b.bearing ?? 0) - (a.bearing ?? 0)) * f) * endFade };
   };
+  // Pure precomputation after the complete raw camera, including act transitions.
+  const waypointZoom = facts ? planWaypointZoom(t => rawCameraAt(t).zoom, D, journeyEnd, overview.zoom, maxZoom) : null;
+  const waypointRaw = facts ? Array.from({ length: cameraCount }, (_, i) => rawCameraAt(i / cameraHz)) : null;
+  const waypointX = waypointRaw ? averagedSamples(Float64Array.from(waypointRaw, c => c.x), 1 / cameraHz) : null;
+  const waypointY = waypointRaw ? averagedSamples(Float64Array.from(waypointRaw, c => c.y), 1 / cameraHz) : null;
+  const waypointPitch = waypointRaw ? averagedSamples(Float64Array.from(waypointRaw, c => c.pitch), 1 / cameraHz) : null;
+  const hudWeight = (t: number) => cameraCubic((t - diveFrom) / (diveTo - diveFrom))
+    * (1 - cameraCubic((t - pullFrom) / Math.max(1e-9, pullTo - pullFrom)));
+  const desiredCameraAt = (t: number): Mcam => {
+    if (!waypointZoom || !waypointX || !waypointY || !waypointPitch) return legacyCameraAt(t);
+    const zoom = waypointZoom(t), world = 512 * 2 ** zoom, weight = hudWeight(t);
+    return { x: waypointX(t) - (jp ? (jp.left - jp.right) / 2 : 0) * weight / world,
+      y: waypointY(t) - (jp ? (jp.top - jp.bottom) / 2 : 0) * weight / world,
+      zoom, pitch: waypointPitch(t) };
+  };
+  const cameraAt = countryReading && opts.cinematic ? planWaypointCenter(desiredCameraAt, t => {
+    const p = lonLatAt(pace.headAt(t - moveStart));
+    return [mercX(p[0]), mercY(p[1])];
+  }, D, introEnd, journeyEnd, viewport, jp, opts.maxPitch ?? 74, overview,
+  t => chapterCards.some(c => t >= c.start - 1 && t <= c.end + 0.5), chapterCards) : desiredCameraAt;
 
   // --- «рядом»: ближайшее место по точкам маршрута; смена — когда голова доходит до первой точки с другим местом
   interface PlaceStep { at: number; place: Place | null }
@@ -509,6 +576,10 @@ export function buildTimeline(
   return {
     durationSec: D,
     frameCount,
+    ...(readingBudget?.result ? { waypointTiming: readingBudget.result } : {}),
+    ...(facts ? { waypointCameraPlan: { diveFrom, diveTo, pullFrom, pullTo,
+      windows: baseJourney.chapterWindows.map(w => ({ ...w, start: w.start + introEnd, plateauStart: w.plateauStart + introEnd,
+        plateauEnd: w.plateauEnd + introEnd, end: w.end + introEnd })) } } : {}),
     frameAt(tIn: number): FrameState {
       const t = Math.max(0, Math.min(D, Number.isFinite(tIn) ? tIn : 0));
       const act: FrameState['act'] = t < introEnd ? 'intro' : t < journeyEnd ? 'journey' : 'outro';

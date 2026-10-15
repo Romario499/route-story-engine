@@ -221,7 +221,9 @@ function labelBox(a: TrackDrawArgs, text: string, x: number, y: number, wrap = f
     lines: lines.map(line => line.trim()), lineHeight, fontPx };
 }
 
-const boxesOverlap = (p: Rect, q: Rect, gap = 4): boolean =>
+/** Зазор между плашками подписей по умолчанию; тот же использует отбор кандидатов в placeWaypointLabel — менять только вместе. */
+const LABEL_GAP = 4;
+const boxesOverlap = (p: Rect, q: Rect, gap = LABEL_GAP): boolean =>
   p.x < q.x + q.w + gap && q.x < p.x + p.w + gap && p.y < q.y + q.h + gap && q.y < p.y + p.h + gap;
 
 /** Подпись над маркером: роль `label` стиля, скругление — `marker.labelRadius`; прижимается к рабочей зоне кадра. */
@@ -245,6 +247,26 @@ function drawLabel(a: TrackDrawArgs, text: string, x: number, y: number, alpha: 
   ctx.restore();
 }
 
+interface ProjectedSegment { seg: [number, number, number, number]; minX: number; maxX: number; minY: number; maxY: number }
+const segmentCache = new WeakMap<TrackDrawArgs, ProjectedSegment[]>();
+/**
+ * Полная проекция пунктирных связей, включая ещё не раскрытые: подпись не садится на маршрут. Проекция кадра одна — считаем один раз на кадр.
+ * Кеш по объекту аргументов верен, пока scene.ts (и экспорт) создают его заново на каждый кадр; если аргументы начнут переиспользовать
+ * между кадрами с меняющейся `project`, кеш нужно сбрасывать.
+ */
+function projectedSegments(a: TrackDrawArgs): ProjectedSegment[] {
+  const hit = segmentCache.get(a);
+  if (hit) return hit;
+  const projected = a.route.points.map(p => a.project(p.lon, p.lat));
+  const out: ProjectedSegment[] = [];
+  for (let i = 1; i < projected.length; i++) {
+    const p = projected[i - 1], q = projected[i];
+    out.push({ seg: [p.x, p.y, q.x, q.y], minX: Math.min(p.x, q.x), maxX: Math.max(p.x, q.x), minY: Math.min(p.y, q.y), maxY: Math.max(p.y, q.y) });
+  }
+  segmentCache.set(a, out);
+  return out;
+}
+
 /** Ближайшее свободное место: проверяем края препятствий и рабочей зоны, затем выбираем минимальный сдвиг. */
 function placeWaypointLabel(a: TrackDrawArgs, text: string, x: number, y: number, occupied: Rect[],
   pack = false, fontPx = css(a.style.type.label.size)): LabelBox | null {
@@ -260,20 +282,38 @@ function placeWaypointLabel(a: TrackDrawArgs, text: string, x: number, y: number
     xs.push(r.x - box.w - gap, r.x + r.w + gap);
     ys.push(r.y - box.h - gap, r.y + r.h + gap);
   }
-  // Полная проекция пунктирных связей, включая ещё не раскрытые: подпись не садится на маршрут.
-  const projected = a.route.points.map(p => a.project(p.lon, p.lat));
   for (let px = left; px <= right - box.w; px += Math.max(20, box.w / 2)) xs.push(px);
   for (let py = top; py <= bottom - box.h; py += Math.max(20, box.h)) ys.push(py);
+  // Результат тот же, что у полного перебора xs × ys (первый минимум по порядку обхода), но без лишней работы: повторы координат
+  // и позиции за рабочей зоной отсеиваются заранее (при строгом «<» дубликат победить не может), перекрытия с препятствиями и
+  // со звеньями пунктира проверяются только у тех, чей прямоугольник по оси x уже подходит.
+  const xsOk = [...new Set(xs)].filter((px) => !(px < left || px + box.w > right));
+  const ysOk = [...new Set(ys)].filter((py) => !(py < top || py + box.h > bottom));
+  // зазор перекрытия — LABEL_GAP, как у boxesOverlap (не путать с gap = 5 для краёв препятствий)
+  const occ = occupied.map((r) => ({ r, x2: r.x + r.w + LABEL_GAP, y2: r.y + r.h + LABEL_GAP }));
+  const linePad = css(a.style.line.width) + 5;
+  const segments = pack ? [] : projectedSegments(a);
+  const rect: Rect = { x: 0, y: 0, w: box.w, h: box.h };
   let best: LabelBox | null = null, distance = Infinity;
   // Если вся область занята пунктиром, резервируем ближайшее место и обрезаем только пунктир под подписью.
   for (const avoidLine of pack ? [] : [true, false]) {
-    for (const px of xs) for (const py of ys) {
-      const candidate = { ...box, x: px, y: py };
-      if (px < left || py < top || px + box.w > right || py + box.h > bottom) continue;
-      if (occupied.some((r) => boxesOverlap(candidate, r))) continue;
-      if (avoidLine && projected.some((p, i) => i > 0 && waypointLineIntersects([projected[i - 1].x, projected[i - 1].y, p.x, p.y], candidate, css(a.style.line.width) + 5))) continue;
-      const d = (px - box.x) ** 2 + (py - box.y) ** 2;
-      if (d < distance) { best = candidate; distance = d; }
+    for (const px of xsOk) {
+      const pxEnd = px + box.w + LABEL_GAP;
+      const blockers = occ.filter((o) => px < o.x2 && o.r.x < pxEnd);
+      // Звено вне прямоугольника подписи с запасом на 1e-6 заведомо не пересекает его: отбрасываем без вызова обрезки.
+      const nearLines = avoidLine ? segments.filter((sg) => !(sg.maxX < px - linePad - 1e-6 || sg.minX > px + box.w + linePad + 1e-6)) : [];
+      rect.x = px;
+      for (const py of ysOk) {
+        const pyEnd = py + box.h + LABEL_GAP;
+        if (blockers.some((o) => py < o.y2 && o.r.y < pyEnd)) continue;
+        if (nearLines.length) {
+          rect.y = py;
+          if (nearLines.some((sg) => !(sg.maxY < py - linePad - 1e-6 || sg.minY > py + box.h + linePad + 1e-6)
+            && waypointLineIntersects(sg.seg, rect, linePad))) continue;
+        }
+        const d = (px - box.x) ** 2 + (py - box.y) ** 2;
+        if (d < distance) { best = { ...box, x: px, y: py }; distance = d; }
+      }
     }
     if (best) return best;
   }

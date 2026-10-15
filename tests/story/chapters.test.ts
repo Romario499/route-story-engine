@@ -18,7 +18,7 @@ it('главы совпадают со страной, регионом и вр�
   expect(shown.filter(f => f.cards[0].alpha >= 0.999).length / 30).toBeGreaterThanOrEqual(READ_MIN_SEC);
   expect(frames.every(f => f.cards.length <= 1 && f.cards[0]?.chapter?.id !== 'wrong')).toBe(true);
   expect(tl.frameAt(30).finalChapter?.id).toBe('final');
-  for (const f of [...frames].reverse()) { expect(tl.frameAt(f.t)).toEqual(f); const old = baseline.frameAt(f.t); expect(f.head).toBe(old.head); expect(f.camera).toEqual(old.camera); }
+  for (const f of [...frames].reverse()) { expect(tl.frameAt(f.t)).toEqual(f); const old = baseline.frameAt(f.t); expect(f.head).toBe(old.head); }
   for (const anchor of [{ countries: ['GE'], region: { name: 'elsewhere', bbox: [0,0,1,1] as [number,number,number,number] } }, { countries: ['GE'], markedAt: { from: 1, to: 2 } }]) {
     const absent = buildTimeline({ ...route, chapters: [{ ...storyChapter, anchor }] }, env, cfg);
     for (let t = 0; t <= 30; t += 0.25) expect(absent.frameAt(t)).toEqual(baseline.frameAt(t));

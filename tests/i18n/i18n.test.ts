@@ -175,6 +175,17 @@ describe('i18n — маршрут по меткам (ADR 0010)', () => {
     expect([1, 5].map((n) => t('en', 'summary.overnightPlaces', { n }))).toEqual(['overnight place', 'overnight places']);
   });
 
+  it('подтверждение импорта: метки и места ночёвки склоняются (1/2/5/11/21/22)', () => {
+    const f = (n: number, nights: number) => t('ru', 'import.confirm', { n, nights });
+    expect(f(1, 1)).toBe('Подтвердить: 1 метка, 1 место ночёвки');
+    expect(f(2, 2)).toBe('Подтвердить: 2 метки, 2 места ночёвки');
+    expect(f(5, 5)).toBe('Подтвердить: 5 меток, 5 мест ночёвки');
+    expect(f(11, 12)).toBe('Подтвердить: 11 меток, 12 мест ночёвки');
+    expect(f(21, 22)).toBe('Подтвердить: 21 метка, 22 места ночёвки');
+    expect(t('en', 'import.confirm', { n: 1, nights: 1 })).toBe('Confirm: 1 waypoint, 1 overnight place');
+    expect(t('en', 'import.confirm', { n: 2, nights: 5 })).toBe('Confirm: 2 waypoints, 5 overnight places');
+  });
+
   it('склонение ночёвок', () => {
     expect([1, 3, 5, 21].map((n) => t('ru', 'summary.nights', { n }))).toEqual(['ночёвка', 'ночёвки', 'ночёвок', 'ночёвка']);
     expect([1, 2].map((n) => t('en', 'summary.nights', { n }))).toEqual(['night', 'nights']);

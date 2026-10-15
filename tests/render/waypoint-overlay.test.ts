@@ -273,3 +273,39 @@ describe('косметика кадра: «Рядом», участок без �
     }
   });
 });
+
+describe('разделитель колонок «Рядом» (9:16): заканчивается по видимым рядам, блок не прыгает', () => {
+  const s = setup({ format: '9:16', styleId: 'epic' });
+  const fs = framesOf(s);
+  // кадр с городом рядом и без события, где название «Рядом» видно, — и кадр с городом, но погашенным как дубль подписи события
+  const shown = fs.find((f) => f.act === 'journey' && f.stats.place && f.t > 8 && !f.cards.length)!;
+  const hidden = fs.find((f) => f.act === 'journey' && f.stats.place && f.cards[0]?.transport && f.cards[0].alpha > 0.99)!;
+  /** Вертикальные линии показателей: [x, верх, низ] по сегментам с одним x. */
+  const dividers = (rec: ReturnType<typeof recorder>) => rec.strokes.flatMap((st) => st.segments)
+    .filter((sg) => sg.from[0] === sg.to[0] && Math.abs(sg.to[1] - sg.from[1]) > 100)
+    .map((sg) => ({ x: sg.from[0], top: Math.min(sg.from[1], sg.to[1]), bottom: Math.max(sg.from[1], sg.to[1]) }));
+  const yOf = (rec: ReturnType<typeof recorder>, text: string) => rec.placed.find((p) => p.text === text)!.y;
+
+  it('кадры найдены', () => { expect(shown).toBeDefined(); expect(hidden).toBeDefined(); });
+
+  it('«Рядом» скрыто: разделитель кончается у нижней границы первого ряда, а не тянется под пустую полосу', () => {
+    const a = draw(shown, s), b = draw(hidden, s);
+    expect(a.texts).toContain('Рядом');
+    expect(b.texts).not.toContain('Рядом');
+    const [full] = dividers(a), [cut] = dividers(b);
+    expect(full).toBeDefined(); expect(cut).toBeDefined();
+    expect(cut.x).toBe(full.x);
+    expect(cut.top).toBe(full.top);
+    // нижняя граница: под подписью «Места ночёвок» (она остаётся на месте) — не ниже неё больше чем на запас ряда
+    const label = yOf(b, 'Места ночёвок');
+    expect(cut.bottom).toBeGreaterThan(label);
+    expect(cut.bottom).toBeLessThan(label + 60);
+    expect(full.bottom).toBeGreaterThan(cut.bottom + 100);
+  });
+
+  it('блок не прыгает: числа и подписи первого ряда стоят на тех же местах при видимом и скрытом «Рядом»', () => {
+    const a = draw(shown, s), b = draw(hidden, s);
+    expect(yOf(b, 'Места ночёвок')).toBe(yOf(a, 'Места ночёвок'));
+    expect(yOf(b, 'Метки')).toBe(yOf(a, 'Метки'));
+  });
+});

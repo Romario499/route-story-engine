@@ -10,14 +10,14 @@ test('выбор участка блокирует превью и экспор�
   await expect(page.getByTestId('route-summary')).toHaveCount(0);
   await expect(page.getByTestId('preview-canvas')).toHaveCount(0);
   await expect(page.getByTestId('export')).toBeDisabled();
-  await expect(page.getByTestId('waypoint-confirm')).toContainText('4 меток');
+  await expect(page.getByTestId('waypoint-confirm')).toContainText('4 метки');
   await page.getByTestId('lang-en').click();
   await expect(page.getByTestId('waypoint-confirm')).toContainText('4 waypoints');
   await page.getByTestId('lang-ru').click();
   await page.getByTestId('waypoint-from').fill('2025-01-01');
   await page.getByTestId('waypoint-to').fill('2025-01-02');
   await page.getByTestId('waypoint-collection-1').uncheck();
-  await expect(page.getByTestId('waypoint-confirm')).toContainText('2 меток, 2 мест ночёвок');
+  await expect(page.getByTestId('waypoint-confirm')).toContainText('2 метки, 2 места ночёвки');
   await page.screenshot({ path: test.info().outputPath('selection.png'), fullPage: true });
   await page.getByTestId('waypoint-confirm').click();
   await expect(page.getByTestId('waypoint-composition')).toContainText('2 из 4');
@@ -40,7 +40,7 @@ test('прочие цвета не теряются и включаются то
   const extras = ['brown', 'pink', 'blue'].map((color, i) => `<Placemark><styleUrl>#placemark-${color}</styleUrl><Point><coordinates>${3 + i},48</coordinates></Point></Placemark>`).join('');
   await page.getByTestId('file-input').setInputFiles({ name: 'synthetic.kml', mimeType: 'application/xml',
     buffer: Buffer.from(organicArchive().replace('</Document>', `${extras}</Document>`)) });
-  await expect(page.getByTestId('waypoint-confirm')).toContainText('4 меток');
+  await expect(page.getByTestId('waypoint-confirm')).toContainText('4 метки');
   await expect(page.getByTestId('waypoint-other-colors-count')).toHaveText('Не включено: 3 закладок других цветов');
   await expect(page.getByTestId('waypoint-other-colors')).not.toBeChecked();
   await expect(page.getByTestId('waypoint-order-confirmed')).not.toBeChecked();

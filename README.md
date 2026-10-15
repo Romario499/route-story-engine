@@ -16,7 +16,7 @@
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![MapLibre GL](https://img.shields.io/badge/MapLibre_GL-4.7-396cb2)
 ![WebCodecs](https://img.shields.io/badge/WebCodecs-H.264_MP4-0f766e)
-![Tests](https://img.shields.io/badge/tests-778_unit_·_28_e2e-2ea44f)
+![Tests](https://img.shields.io/badge/tests-842_unit_·_28_e2e-2ea44f)
 ![No backend](https://img.shields.io/badge/backend-нет-6b7280)
 
 <img src="docs/assets/hero.jpg" alt="Кадры роликов Route Story: глава «Иран» в 16:9 и глава «Армения» в 9:16" width="100%">
@@ -76,7 +76,7 @@
 | Визуал и storytelling — 25% | Три стиля, камера шести сцен, DEM с подписанным вертикальным масштабом, флаги, выноски «рядом: город», главы со слов путешественника, итог поездки. |
 | Реальные данные, маршрут и анимация — 15% | Путешествие @wahrier по меткам Organic Maps. Метки, ночёвки и участки показаны без выдуманного километража; порядок закладок требует подтверждения. |
 | UX — 10% | Загрузка → стиль → Play/replay → экспорт → открытие файла; встроенный пример для быстрого знакомства. |
-| Техника — 10% | Vite + TypeScript strict, MapLibre, Canvas, WebCodecs; без бэкенда. 71 тестовый файл / 778 passed, e2e Edge 28/28 — [результаты](docs/submission/test-results.md). |
+| Техника — 10% | Vite + TypeScript strict, MapLibre, Canvas, WebCodecs; без бэкенда. 75 тестовых файлов / 842 passed, e2e Edge 28/28 — [результаты](docs/submission/test-results.md). |
 | Reels/YouTube — 5% | Вертикальный и горизонтальный 1080p, 15/30/45/60 с, RU/EN. Загрузка на платформы отдельно не проверялась. |
 | Демонстрация — 5% | [Сценарий защиты](docs/submission/demo-script.md) с обязательным открытием экспортированного видео. |
 | Live URL, репозиторий + README | Ссылки в начале страницы; материалы подачи — в [docs/submission](docs/submission/). |

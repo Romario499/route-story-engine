@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GPX baseline: 9:16, cinematic=false, time=false 1`] = `"035fc41d03ca905330cde82df90fa36338ace8de23010fa28129536d0e985e45"`;
+
+exports[`GPX baseline: 9:16, cinematic=false, time=true 1`] = `"97f1cce70172574c53dbca67abf38c73334d4a0dbbad8cc8ff8abb027f83da70"`;
+
+exports[`GPX baseline: 9:16, cinematic=true, time=false 1`] = `"911dc1518b967379010699c5f6a38b177f77731db2df8b48a2033bfff531088f"`;
+
+exports[`GPX baseline: 9:16, cinematic=true, time=true 1`] = `"2ba96cd988c88bee100ab9cf8b1d7b82dbb91e32ce95f1934d42a24cef548db1"`;
+
+exports[`GPX baseline: 16:9, cinematic=false, time=false 1`] = `"8b5b70a115c44814e9eb1949c6801894969da615cf463495c8eaed3be5a040b7"`;
+
+exports[`GPX baseline: 16:9, cinematic=false, time=true 1`] = `"d8152868bed45f013e38038dcedf2c91b223c0ca942eb89acadd8c583b50e169"`;
+
+exports[`GPX baseline: 16:9, cinematic=true, time=false 1`] = `"501579f32fc4182de19ed97f654cf6e94c1b6c0a3096a1aab9e568d5c3525e78"`;
+
+exports[`GPX baseline: 16:9, cinematic=true, time=true 1`] = `"bd4504678f204cb88863daa7f92b8e560bf0037c6c528f8fe62e6d40bd98eda6"`;

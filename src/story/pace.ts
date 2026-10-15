@@ -31,6 +31,8 @@ export interface PacePlan {
   headAt(tau: number): number;
   /** Когда (с начала движения) голова проходит индекс idx. */
   timeOfIdx(idx: number): number;
+  /** Departure after an explicit waypoint hold; timeOfIdx remains arrival. */
+  departureOfIdx?(idx: number): number;
 }
 
 /** Гладкая ступенька 0→1 на x ∈ [−1, 1] (smootherstep). */

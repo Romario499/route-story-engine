@@ -30,15 +30,210 @@ const VIEW_MAX_SHARE = 0.6;
 const VIEW_MIN_M = 400;
 /** В кадре — не меньше, чем голова проходит за столько секунд: иначе фон мелькает. */
 const VIEW_MIN_TRAVEL_SEC = 1.0;
+/** Метки не требуют уличного масштаба или DEM; глава раскрывает регион ~400 км. */
+const WAYPOINT_MAX_ZOOM = 8;
+const CHAPTER_VIEW_M = 400_000;
+export const WAYPOINT_ZOOM_SPEED = 0.6;
+export const CAMERA_AVERAGE_RADIUS = 0.25;
+
+/** Separate cubic for waypoint camera windows; the GPX smootherstep stays unchanged. */
+export const cameraCubic = (u: number): number => {
+  const x = Math.max(0, Math.min(1, u));
+  return x * x * (3 - 2 * x);
+};
+
+export interface ChapterCameraWindow { start: number; plateauStart: number; plateauEnd: number; end: number; amplitude: number }
+
+/** Merge reading windows before assigning ramps. Camera amplitude yields to available time, never reading. */
+export function planChapterCamera(windows: { start: number; end: number }[], from: number, to: number,
+  baseZoom: number, chapterZoom: number): ChapterCameraWindow[] {
+  const amplitude = Math.max(0, Math.min(2, chapterZoom - baseZoom));
+  const ramp = 1.5 * amplitude / WAYPOINT_ZOOM_SPEED;
+  const groups: { start: number; end: number }[] = [];
+  for (const w of [...windows].sort((a, b) => a.start - b.start)) {
+    const prev = groups[groups.length - 1];
+    if (prev && (w.start - prev.end < 2 || prev.end + ramp >= w.start - ramp)) prev.end = Math.max(prev.end, w.end);
+    else groups.push({ ...w });
+  }
+  return groups.map((g, i) => {
+    const lo = i ? (groups[i - 1].end + g.start) / 2 : from;
+    const hi = i + 1 < groups.length ? (g.end + groups[i + 1].start) / 2 : to;
+    // H includes the entire reading plateau and 0.5 s for the final moving average.
+    const plateauStart = g.start - CAMERA_AVERAGE_RADIUS, plateauEnd = g.end + CAMERA_AVERAGE_RADIUS;
+    const a = Math.max(0, Math.min(amplitude, WAYPOINT_ZOOM_SPEED * (hi - lo - (plateauEnd - plateauStart)) / 3,
+      WAYPOINT_ZOOM_SPEED * (plateauStart - lo) / 1.5, WAYPOINT_ZOOM_SPEED * (hi - plateauEnd) / 1.5));
+    const r = 1.5 * a / WAYPOINT_ZOOM_SPEED;
+    return { start: plateauStart - r, plateauStart, plateauEnd, end: plateauEnd + r, amplitude: a };
+  });
+}
+
+export function chapterCameraWeight(t: number, w: ChapterCameraWindow): number {
+  if (!(w.amplitude > 0) || t <= w.start || t >= w.end) return 0;
+  if (t < w.plateauStart) return cameraCubic((t - w.start) / (w.plateauStart - w.start));
+  if (t <= w.plateauEnd) return 1;
+  return cameraCubic((w.end - t) / (w.end - w.plateauEnd));
+}
+
+/** Exact integral of a linear interpolant, with constant extension at both ends. C1 even at sample knots. */
+export function averagedSamples(values: Float64Array, h: number, radius = CAMERA_AVERAGE_RADIUS): (t: number) => number {
+  const last = values.length - 1, end = last * h, origin = values[0];
+  const areas = new Float64Array(values.length);
+  for (let i = 1; i <= last; i++) areas[i] = areas[i - 1] + ((values[i - 1] - origin) + (values[i] - origin)) * h / 2;
+  const integral = (t: number): number => {
+    if (t <= 0) return 0;
+    if (t >= end) return areas[last] + (t - end) * (values[last] - origin);
+    const i = Math.min(last - 1, Math.floor(t / h)), d = t - i * h;
+    return areas[i] + (values[i] - origin) * d + (values[i + 1] - values[i]) * d * d / (2 * h);
+  };
+  return t => origin + (integral(t + radius) - integral(t - radius)) / (2 * radius);
+}
+
+/** Whole-film zoom, after every raw contribution (beats, chapters, dive and pullback).
+ * Both passes make L 0.6-Lipschitz. Z'= (L(t+r)-L(t-r))/(2r), hence |Z'|<=0.6 everywhere.
+ * L is continuous, so Z is C1. No previous-frame state and no post-filter zoom additions.
+ */
+export function planWaypointZoom(rawZoom: (t: number) => number, duration: number, journeyEnd: number,
+  overviewZoom: number, maxZoom: number,
+  plateaus: { start: number; end: number; zoom: number }[] = [],
+  ceilingAt: (t: number) => number = () => Infinity): (t: number) => number {
+  const count = Math.ceil(duration * CAM_HZ), h = duration / count;
+  // Anticipate reading before either speed-limiting pass. The lower envelope is
+  // itself 0.6-Lipschitz, so limiting cannot erase a feasible reading plateau.
+  // Include both this average and the final center planner's zoom average.
+  const guard = CAMERA_AVERAGE_RADIUS + 3 * h;
+  const q = Float64Array.from({ length: count + 1 }, (_, i) => {
+    const t = i * h;
+    const floor = plateaus.reduce((z, w) => Math.max(z, Math.min(maxZoom, w.zoom)
+      - WAYPOINT_ZOOM_SPEED * Math.max(0, w.start - guard - t, t - w.end - guard)), overviewZoom);
+    return t <= CAMERA_AVERAGE_RADIUS || t >= journeyEnd - CAMERA_AVERAGE_RADIUS
+      ? overviewZoom : Math.min(ceilingAt(t), Math.max(floor, Math.min(maxZoom, rawZoom(t))));
+  });
+  for (let i = 1; i <= count; i++) q[i] = Math.min(q[i], q[i - 1] + WAYPOINT_ZOOM_SPEED * h);
+  for (let i = count - 1; i >= 0; i--) q[i] = Math.min(q[i], q[i + 1] + WAYPOINT_ZOOM_SPEED * h);
+  return averagedSamples(q, h);
+}
 
 export interface Mcam { x: number; y: number; zoom: number; pitch: number; bearing?: number }
+
+/** Limit the final center vector after zoom, smoothing and HUD displacement.
+ * The backward pass anticipates transfers. Bounds invert the scene's pitched flat
+ * projection, with room for the marker and DEM, rather than correcting a rendered frame. */
+export function planWaypointCenter(desired: (t: number) => Mcam, headAt: (t: number) => [number, number],
+  duration: number, introEnd: number, journeyEnd: number, viewport: ViewSize, padding: Padding | undefined,
+  maxPitch: number, overview: Mcam, chapterAt: (t: number) => boolean = () => false,
+  readingWindows: { start: number; end: number }[] = []): (t: number) => Mcam {
+  const h = 1 / CAM_HZ, count = Math.round(duration * CAM_HZ) + 1;
+  const raw = Array.from({ length: count }, (_, i) => desired(i * h));
+  const heads = Array.from({ length: count }, (_, i) => headAt(i * h));
+  // First widen the view around fast travel, before changing the desired center.
+  // planWaypointZoom propagates these caps in both directions at <=0.6 levels/s.
+  const zoomCaps = raw.map((c, i) => {
+    let speed = 0;
+    for (const j of [i - 1, i + 1]) if (raw[j]) speed = Math.max(speed,
+      Math.hypot((c.x - raw[j].x) / viewport.width, (c.y - raw[j].y) / viewport.height) * TILE_SIZE * 2 ** c.zoom / h);
+    return c.zoom + Math.min(0, Math.log2(0.285 / Math.max(1e-12, speed)));
+  });
+  const cappedZoom = (t: number) => {
+    const q = Math.max(0, Math.min(count - 1, t * CAM_HZ)), i = Math.min(count - 2, Math.floor(q));
+    return zoomCaps[i] + (zoomCaps[i + 1] - zoomCaps[i]) * (q - i);
+  };
+  const wide = viewport.width > viewport.height;
+  const margin = 18; // CSS px: marker radius + terrain projection allowance.
+  const safe = { left: Math.max(padding?.left ?? 0, viewport.width * (wide ? 0.04 : 0)) + margin,
+    right: Math.min(viewport.width - (padding?.right ?? 0), viewport.width * (wide ? 0.96 : 0.88)) - margin,
+    top: Math.max(padding?.top ?? 0, viewport.height * (wide ? 0.05 : 0.12)) + margin,
+    bottom: Math.min(viewport.height - (padding?.bottom ?? 0), viewport.height * (wide ? 0.935 : 0.8)) - margin };
+  let result: Mcam[] = raw;
+  const reading = readingWindows.map(w => ({ ...w, zoom: overview.zoom + 1.5001 }));
+  // Only a failed center constraint may override reading or optional amplitude.
+  // The two Lipschitz passes propagate a local cap as far as the zoom speed needs,
+  // preserving the original peaks and complete reading windows everywhere else.
+  const ceilings = new Float64Array(count).fill(Infinity);
+  const ceilingAt = (t: number) => ceilings[Math.max(0, Math.min(count - 1, Math.round(t / h)))];
+  for (let attempt = 0; attempt <= 24; attempt++) {
+    const zoomAt = planWaypointZoom(cappedZoom, duration, journeyEnd, overview.zoom, 8, reading, ceilingAt);
+    const samples = raw.map((c, i) => ({ ...c, zoom: zoomAt(i * h) }));
+    const bounds = samples.map((c, i) => {
+      if (i * h < introEnd || i * h >= journeyEnd) return null;
+      const world = TILE_SIZE * 2 ** c.zoom;
+      const pitch = Math.min(28, c.pitch * maxPitch) * Math.PI / 180;
+      const D = 1.5 * viewport.height, sin = Math.sin(pitch), cos = Math.cos(pitch);
+      const invertY = (screen: number) => { const y = screen - viewport.height / 2; return y * D / (D * cos + y * sin); };
+      const chapter = chapterAt(i * h);
+      const bottom = !wide && chapter ? Math.min(safe.bottom, viewport.height * 0.5 - margin) : safe.bottom;
+      // Country + two title/text lines + geography legend remain above the head.
+      const top = chapter ? Math.max(safe.top, viewport.height * (wide ? 0.55 : 0.38) + margin) : safe.top;
+      const y0 = invertY(top), y1 = invertY(bottom);
+      const scale = Math.max(D / (D - y0 * sin), D / (D - y1 * sin));
+      const right = wide && chapter ? Math.min(safe.right, viewport.width * 0.6 - margin) : safe.right;
+      const x0 = (safe.left - viewport.width / 2) / scale, x1 = (right - viewport.width / 2) / scale;
+      return { x0: heads[i][0] - x1 / world, x1: heads[i][0] - x0 / world,
+        y0: heads[i][1] - y1 / world, y1: heads[i][1] - y0 / world };
+    });
+    // The averaging window at t=0 must contain only overview samples: frameAt
+    // clamps negative time, so a nonzero endpoint derivative would break C1 there.
+    const pin = (i: number) => i <= 4 || i * h >= journeyEnd;
+    const project = (i: number) => {
+      const b = bounds[i], c = samples[i];
+      if (pin(i)) { c.x = overview.x; c.y = overview.y; }
+      else if (b) { c.x = Math.max(b.x0, Math.min(b.x1, c.x)); c.y = Math.max(b.y0, Math.min(b.y1, c.y)); }
+    };
+    // Slightly below the acceptance ceiling for interpolation and varying zoom.
+    const radius = (i: number, j: number) => 0.285 * h / (TILE_SIZE * 2 ** Math.max(samples[i].zoom, samples[j].zoom));
+    const limit = (i: number, j: number) => {
+      const a = samples[i], b = samples[j];
+      const dx = (a.x - b.x) / viewport.width, dy = (a.y - b.y) / viewport.height;
+      const length = Math.hypot(dx, dy), r = radius(i, j);
+      if (length > r && !pin(i)) { a.x = b.x + dx * r / length * viewport.width; a.y = b.y + dy * r / length * viewport.height; }
+      project(i);
+    };
+    samples.forEach((_, i) => project(i));
+    let valid = false;
+    for (let pass = 0; pass < 400; pass++) {
+      for (let i = 1; i < count; i++) limit(i, i - 1);
+      for (let i = count - 2; i >= 0; i--) limit(i, i + 1);
+      valid = samples.every((c, i) => i === 0 || Math.hypot((c.x - samples[i - 1].x) / viewport.width,
+        (c.y - samples[i - 1].y) / viewport.height) <= radius(i, i - 1) * (1 + 1e-7));
+      if (valid) break;
+    }
+    result = samples;
+    if (valid) break;
+    if (attempt === 24) throw new RangeError('Waypoint center and safe-area constraints are infeasible');
+    // Relax only the unresolved links, never every chapter because one transfer
+    // failed. Zoom at the overview is already feasible for these route bounds.
+    for (let i = 1; i < count; i++) {
+      const c = samples[i], p = samples[i - 1];
+      if (Math.hypot((c.x - p.x) / viewport.width, (c.y - p.y) / viewport.height)
+        <= radius(i, i - 1) * (1 + 1e-7)) continue;
+      const cap = Math.max(overview.zoom, Math.max(c.zoom, p.zoom) - 0.125);
+      ceilings[i] = Math.min(ceilings[i], cap);
+      ceilings[i - 1] = Math.min(ceilings[i - 1], cap);
+    }
+  }
+  // Four samples soften the safe-area entry's acceleration as well as its speed.
+  // At the 0.285 viewport/s limit, the mean displacement stays within the 18 px margin.
+  const centerX = averagedSamples(Float64Array.from(result, c => c.x), h, h * 4);
+  const centerY = averagedSamples(Float64Array.from(result, c => c.y), h, h * 4);
+  const finalZoom = averagedSamples(Float64Array.from(result, c => c.zoom), h, h * 2);
+  return t => {
+    const q = Math.max(0, Math.min(count - 1, t * CAM_HZ)), i = Math.min(count - 2, Math.floor(q)), f = q - i;
+    const a = result[i], b = result[i + 1];
+    return { x: centerX(t), y: centerY(t), zoom: finalZoom(t), pitch: a.pitch + (b.pitch - a.pitch) * f };
+  };
+}
 
 export const toCamera = (c: Mcam): CameraState => ({ center: [lonOf(c.x), latOf(c.y)], zoom: c.zoom, pitch: c.pitch, bearing: c.bearing ?? 0 });
 
 export function overviewCamera(route: Route, viewport: ViewSize, padding?: Padding): Mcam {
   const pad = padding ?? Math.round(OVERVIEW_PADDING_SHARE * Math.min(viewport.width, viewport.height));
   const { center, zoom } = fitBounds(route.bbox, viewport, pad);
-  return { x: mercX(center[0]), y: mercY(center[1]), zoom: Math.min(OVERVIEW_MAX_ZOOM, zoom), pitch: 0 };
+  return { x: mercX(center[0]), y: mercY(center[1]), zoom: Math.min(route.source?.kind === 'waypoints' ? WAYPOINT_MAX_ZOOM : OVERVIEW_MAX_ZOOM, zoom), pitch: 0 };
+}
+
+/** Региональный план главы, без зависимости от темпа чтения и условной скорости меток. */
+export function waypointChapterZoom(route: Route, viewport: ViewSize): number {
+  const midLat = (route.bbox[1] + route.bbox[3]) / 2;
+  return Math.min(WAYPOINT_MAX_ZOOM, Math.log2(Math.min(viewport.width, viewport.height) / TILE_SIZE / (CHAPTER_VIEW_M * mercPerMeter(midLat))));
 }
 
 /** Размах маршрута — диагональ bbox, м. */
@@ -98,6 +293,10 @@ export interface JourneyCameraInput {
   headIdxAt(tau: number): number;
   /** Моменты битов (с начала путешествия) — на них лёгкий наезд. */
   beatTimes: number[];
+  /** Окна чтения глав, секунды от начала путешествия; только для меток. */
+  chapterWindows?: { start: number; end: number }[];
+  chapterZoom?: number;
+  chapterCameraBounds?: { from: number; to: number };
   /**
    * Куда на экране ставить цель камеры относительно центра кадра, CSS-пиксели (центр свободной от HUD области
    * минус центр кадра). Сдвиг плоский, без поправки на наклон: при pitch голова смещается по вертикали чуть меньше.
@@ -163,7 +362,7 @@ function smoothPath(route: Route, sigmaM: number): (s: number) => [number, numbe
 }
 
 /** Предвычисленный путь камеры путешествия; at(τ) — линейная интерполяция отсчётов. */
-export function journeyCamera(inp: JourneyCameraInput): { at(tau: number): Mcam } {
+export function journeyCamera(inp: JourneyCameraInput): { at(tau: number): Mcam; chapterWindows: ChapterCameraWindow[] } {
   const { route, journeySec, baseZoom } = inp;
   const K = Math.max(2, Math.ceil(journeySec * CAM_HZ) + 1);
   const dt = journeySec / (K - 1);
@@ -177,6 +376,12 @@ export function journeyCamera(inp: JourneyCameraInput): { at(tau: number): Mcam 
   const path = smoothPath(route, CENTER_SIGMA_VIEW_SHARE * viewM);
   const leadM = CENTER_LEAD_VIEW_SHARE * viewM;
   const totalM = route.points[route.points.length - 1].d;
+  const chapterZoom = inp.chapterZoom ?? baseZoom;
+  const chapterViewM = minDim / TILE_SIZE / 2 ** chapterZoom / mercPerMeter(midLat);
+  const chapterPath = inp.chapterWindows?.length ? smoothPath(route, CENTER_SIGMA_VIEW_SHARE * chapterViewM) : null;
+  const chapterLeadM = CENTER_LEAD_VIEW_SHARE * chapterViewM;
+  const chapterWindows = planChapterCamera(inp.chapterWindows ?? [], inp.chapterCameraBounds?.from ?? 0,
+    inp.chapterCameraBounds?.to ?? journeySec, baseZoom, chapterZoom);
 
   // переезды: камера чуть поднимается, если прыжок длиннее окна кадра
   const lifts = route.transfers.map(({ fromIdx, toIdx }) => {
@@ -199,17 +404,37 @@ export function journeyCamera(inp: JourneyCameraInput): { at(tau: number): Mcam 
     }
     let lift = 0;
     for (const l of lifts) if (h > l.fromIdx && h < l.toIdx) lift = Math.max(lift, l.lift);
-    zs[j] = baseZoom + BEAT_PUSH_ZOOM * push - lift;
+    let chapterWeight = 0;
+    let chapterAmplitude = 0;
+    for (const slot of chapterWindows) {
+      const weight = chapterCameraWeight(tau, slot);
+      if (weight > 0) {
+        chapterWeight = weight;
+        chapterAmplitude = slot.amplitude;
+        break; // merged windows have disjoint ramps; no max-envelope switch
+      }
+    }
+    if (chapterPath && chapterWeight > 0) {
+      const lead = chapterLeadM * smoothLead((totalM - d) / (4 * chapterLeadM));
+      const [cx, cy] = chapterPath(Math.min(totalM, d + lead));
+      xs[j] += (cx - xs[j]) * chapterWeight;
+      ys[j] += (cy - ys[j]) * chapterWeight;
+    }
+    const ordinaryZoom = baseZoom + BEAT_PUSH_ZOOM * push - lift;
+    const zoom = ordinaryZoom + (baseZoom + chapterAmplitude - ordinaryZoom) * chapterWeight;
+    zs[j] = route.source?.kind === 'waypoints' ? Math.min(WAYPOINT_MAX_ZOOM, zoom) : zoom;
   }
   const sz = smooth(zs, hz, ZOOM_SIGMA_SEC, 0);
   const shift = inp.shiftPx ?? { x: 0, y: 0 };
 
   return {
+    chapterWindows,
     at(tau: number): Mcam {
       const p = Math.max(0, Math.min(K - 1, tau / dt));
       const j = Math.min(K - 2, Math.floor(p));
       const f = p - j;
-      const zoom = sz[j] + (sz[j + 1] - sz[j]) * f;
+      const sampledZoom = sz[j] + (sz[j + 1] - sz[j]) * f;
+      const zoom = route.source?.kind === 'waypoints' ? Math.min(WAYPOINT_MAX_ZOOM, sampledZoom) : sampledZoom;
       // цель стоит в центре свободной области: центр камеры смещён на обратную величину в мировых единицах
       const world = TILE_SIZE * 2 ** zoom;
       return {
