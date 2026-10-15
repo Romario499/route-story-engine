@@ -2,7 +2,7 @@
 
 GPS-трек или метки путешествия → анимированная видеоистория: **ROUTE → STYLE → REPLAY → EXPORT**, прямо в браузере.
 
-**Live URL:** https://romario499.github.io/route-story-engine/ — Chrome/Edge на компьютере. Сайт будет обновлён финальной версией подачи.
+**Live URL:** https://romario499.github.io/route-story-engine/ — Chrome/Edge на компьютере.
 **Репозиторий:** https://github.com/Romario499/route-story-engine
 
 **Ролики конкурса «Вайбатон · Route Story»:** [9:16 — MP4](exports/submission/route-story-9x16.mp4) · [16:9 — MP4](exports/submission/route-story-16x9.mp4). Финальная пара — реальное путешествие @wahrier по меткам Organic Maps, Турция → Узбекистан, стиль «Экспедиция», по 60 с, с главами «со слов путешественника». Публикация роликов разрешена путешественником; исходные файлы маршрута, координаты и тексты глав в репозиторий не входят.

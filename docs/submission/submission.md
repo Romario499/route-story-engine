@@ -1,6 +1,6 @@
 # Route Story Engine — конкурс «Вайбатон · Route Story»
 
-**Live URL:** https://romario499.github.io/route-story-engine/ (будет обновлён финальной версией).
+**Live URL:** https://romario499.github.io/route-story-engine/
 **Репозиторий и README:** https://github.com/Romario499/route-story-engine
 
 ## Что это
