@@ -28,8 +28,9 @@ try {
       await contactSheet(browser,pairs,resolve('docs/visual-review/preview-vs-export',key+'.png'),2,portrait?240:400,portrait?426:225);
     }
   }
-  for(const format of ['16x9','9x16']) {
-    const old=resolve('.autopilot/2026-10-09-route-story-engine--wip/v3-refs',format==='16x9'?'07_current_export_16x9_before.png':'08_current_export_9x16_before.png');
+  // Кадры «до» (V3) лежат только локально: каталог задаётся RS_V3_REFS, без него листы до/после не пересобираются.
+  for(const format of process.env.RS_V3_REFS ? ['16x9','9x16'] : []) {
+    const old=resolve(process.env.RS_V3_REFS,format==='16x9'?'07_current_export_16x9_before.png':'08_current_export_9x16_before.png');
     const name=format==='16x9'?'expedition-16x9-en':'expedition-9x16-ru';
     await contactSheet(browser,[{label:`V3 reference ${format} before`,path:old},
       {label:`Actual MP4 ${format} after t=28`,path:resolve(SCRATCH,'videos',name,'t28.000.png')}],resolve('docs/visual-review/after',`v3-before-after-${format}.png`),2,format==='16x9'?480:300,426);

@@ -1,4 +1,3 @@
-<!-- autopilot:start -->
 # Route Story Engine — GPS-трек или метки Organic Maps → ролик 9:16 / 16:9 (Vite + TypeScript strict, без бэкенда и UI-фреймворка)
 
 Ветка работы — `master`; remote не настроен, Pages-деплой срабатывает на `main`. Нужны Node ≥ 22.18 (скрипты читают `.ts` напрямую; проверено на 24.15), установленный Edge (e2e, экспорт); Windows PowerShell — `npm.cmd`/`npx.cmd`.
@@ -53,18 +52,10 @@
 - `scene.ts` лезет в приватное `map.style.sourceCaches` MapLibre 4.7.1 (`hasErroredTiles`, `guardTerrainTileCache` и запись `map.terrain.exaggeration` в `placeCamera` — обход бага terrain + `clearFadeHold` на зуме 13+, ADR 0009) — при обновлении `maplibre-gl` проверить первым; проверка — dev на :5182 и `node tests/render/terrain-zoom-probe.mjs <горный.gpx>` (локально — `tracks/triglav.gpx`; `tracks/` вне git, в чистом клоне его нет).
 - Dev-only: кнопка «Пример: участок по меткам @wahrier» (`load-sample-waypoints`) и `window.__rs` существуют только при `import.meta.env.DEV`; в `build`/`preview` их нет, e2e этого примера идёт на синтетике через свой Vite на :5199.
 - Windows/CRLF: файлы держать в LF (`.gitattributes` приведёт при коммите, но редакторы пишут CRLF).
-- **Перед любой публикацией (push, GitHub Pages)** — обязательная очистка: факты из воспоминаний @wahrier и заголовки его глав лежат в `.autopilot/…/2026-10-11-brief.md`, `tickets/21-story-chapters.md`, `spec.md` («Главы…») и в локальной истории git с `4bf386d`; вынести в `private/` и переписать историю (решение владельца 2026-10-12). Личные данные — только `private/` (KMZ, выборки, главы, промпты), треки из интернета — `tracks/`; обе папки в `.gitignore`, `exports/redesign/` и `docs/visual-review/` в git лежат.
 - Зависимости не добавлять без причины; `.env*` не трогать (в проекте их нет и не нужно).
 
 ## Окружение
 
-Переменных окружения для приложения нет: ключей, аккаунтов и бэкенда в проекте нет (деплой — GitHub Pages из `main`, `.github/workflows/deploy.yml`: `npm ci` → `npm run check` → `npm run build`). Необязательные переменные скриптов: `RS_E2E_CHANNEL`, `RS_E2E_HEADED=1`, `RS_EXPORT_ONLY`, `RS_EXPORT_REVIEW_EXISTING`, `RS_T15_SCRATCH`, `RS_FRAMES_URL`, `RS_THUMBS_URL`, `RS_BEFORE_URL`.
+Переменных окружения для приложения нет: ключей, аккаунтов и бэкенда в проекте нет (деплой — GitHub Pages из `main`, `.github/workflows/deploy.yml`: `npm ci` → `npm run check` → `npm run build`). Необязательные переменные скриптов: `RS_E2E_CHANNEL`, `RS_E2E_HEADED=1`, `RS_EXPORT_ONLY`, `RS_EXPORT_REVIEW_EXISTING`, `RS_T15_SCRATCH`, `RS_V3_REFS`, `RS_FRAMES_URL`, `RS_THUMBS_URL`, `RS_BEFORE_URL`.
 
 Подробнее: `docs/architecture.md` (поток данных, границы модулей, приватность), `docs/adr/` (почему решено так; 0010–0014 — метки, главы, выборка, города, медиа), `CONTEXT.md` (язык предметной области: «голова», «переезд», «бит», «акт», «метка», «ночёвка»).
-
-## Как здесь работает Autopilot
-
-Сборка ведётся навыком `/autopilot`. Требования, спецификация и таски — в `.autopilot/`.
-Прогресс — `.autopilot/dashboard.html`. Требование из `manifest.md` может снять
-только пользователь. Прерванную сборку продолжает «продолжи автопилот».
-<!-- autopilot:end -->

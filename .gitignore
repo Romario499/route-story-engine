@@ -5,19 +5,13 @@ node_modules/
 __pycache__/
 .DS_Store
 dist/
-.autopilot/serve.*
-.autopilot/codex-channel.json
-.autopilot/codex-channel.log
 test-results/
 playwright-report/
 
 # Арт-референсы V3 (10 МБ PNG, локально)
-.autopilot/2026-10-09-route-story-engine--wip/v3-refs/
 
 # Треки пользователя из интернета — лицензия не выяснена, в git не класть
 tracks/
 
 # Личные геоданные путешественника (KMZ Organic Maps @wahrier) — точные ночёвки, не публиковать без разрешения
 private/
-.autopilot/claude-channel.json
-.autopilot/claude-channel.log

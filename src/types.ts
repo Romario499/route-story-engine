@@ -1,4 +1,4 @@
-// Общие формы данных Route Story Engine. Контракт описан в .autopilot/.../interfaces.md.
+// Общие формы данных Route Story Engine. Поток данных и границы модулей — docs/architecture.md.
 
 export interface TrackPoint { lat: number; lon: number; ele?: number; time?: number /* epoch ms */ }
 export interface Waypoint { lat: number; lon: number; name: string }
