@@ -22,7 +22,7 @@ test.describe('участок по меткам', () => {
       await expect(page.getByTestId('load-sample')).toHaveText('Пример: маршрут @wahrier');
       await expect(page.getByTestId('waypoints-sample-note')).toHaveText('по меткам Organic Maps, не GPS-трек');
       await page.getByTestId('load-sample-waypoints').click();
-      await expect(page.getByTestId('route-summary-line')).toHaveText(/^6\s+меток · 5\s+мест ночёвок$/);
+      await expect(page.getByTestId('route-summary-line')).toHaveText(/^6\s+меток · 5\s+мест ночёвки$/);
       await expect(page.getByTestId('author-input')).toHaveValue('@wahrier');
       await expect(page.getByLabel('Места ночёвок', { exact: true })).toBeChecked();
       await expect(page.getByLabel('Метки', { exact: true })).toBeEnabled();
@@ -56,7 +56,7 @@ test.describe('участок по меткам', () => {
     await page.getByTestId('route-summary').waitFor({ state: 'visible', timeout: 30_000 });
 
     const line = page.getByTestId('route-summary-line');
-    await expect(line).toHaveText(/^6\s+меток · 5\s+мест ночёвок$/);
+    await expect(line).toHaveText(/^6\s+меток · 5\s+мест ночёвки$/);
     await expect(line).not.toContainText('км');
     await expect(page.getByTestId('route-summary')).not.toContainText('Organic Maps Bookmarks');
     await expect(page.getByTestId('waypoints-badge')).toHaveText('По меткам Organic Maps, не GPS-трек');

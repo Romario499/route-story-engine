@@ -27,7 +27,7 @@ describe('маршрут по меткам в сводке страницы', ()
 
   it('строка сводки: метки и места ночёвок — без дней поездки и километража', () => {
     const line = flat(summaryLine(route(), false));
-    expect(line).toBe('6 меток · 5 мест ночёвок');
+    expect(line).toBe('6 меток · 5 мест ночёвки');
     expect(line).not.toMatch(/км|точ/);
   });
 

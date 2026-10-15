@@ -7,17 +7,18 @@
 // Размеры шрифтов — из `StyleDef.type`, прямоугольники — из `layout.ts`, цвета оформления — здесь, ключом по styleId.
 import {
   beatTitle, chapterCaption, countryName, sourceLabel, formatAltitude, formatDate, formatDateRange, formatDistance, formatNumber,
-  formatSpeed, placeName, t, transportTitle,
+  attributionText, formatSpeed, placeName, t, transportTitle,
 } from '../i18n';
 import { ACTS, factsAt, isWaypointRoute, journeyFacts } from '../story';
 import { overviewCountries, overviewLabels, type OverviewLabels } from '../story/legs';
+import { matchChapters } from '../story/chapters';
 import {
   type ActiveCard, type Beat, type Chapter, type Country, type Enrichment, type Format, type FrameState, type InfoKey,
   MAP_VIEWPORT, type Lang, type Place, type Route, type StorySettings, type StyleId,
 } from '../types';
 import { drawIcon, getFlag, type IconKind } from './assets';
 import { FONT_FAMILIES } from './fonts';
-import { chapterCaptionRect, layoutFor, type Layout } from './layout';
+import { chapterCaptionRect, layoutFor, type Layout, type Rect } from './layout';
 import { chapterToneFor, fontStack, STYLES, type StyleDef } from './styles';
 
 export interface OverlayData {
@@ -682,9 +683,9 @@ function drawPlaque(env: Env, country: Country, alpha: number, dy: number): void
   const { ctx, style, skin, layout } = env;
   const area = layout.caption;
   const atlas = style.id === 'atlas';
-  const flagH = atlas ? 46 : style.id === 'neon' ? 54 : 58;
+  const flagH = (atlas ? 46 : style.id === 'neon' ? 54 : 58) * layout.readability.countryScale;
   const flagW = flagH * (4 / 3);
-  const nameSize = style.id === 'epic' ? 64 : 60;
+  const nameSize = (style.id === 'epic' ? 64 : 60) * layout.readability.countryScale;
   ctx.save();
   ctx.globalAlpha *= alpha;
   const y = area.y + dy;
@@ -745,24 +746,58 @@ function beatIcon(beat: Beat): IconKind {
   }
 }
 
-/** Событийная подпись: старт, финиш, высшая точка, остановка (и въезд в страну, если плашка страны выключена). */
-function drawChapterCaption(env: Env, chapter: Chapter, alpha: number): void {
-  const { ctx, skin, lang, style } = env;
-  const area = chapterCaptionRect(env.layout.format, style.id);
-  const cap = chapterCaption(lang, chapter);
-  ctx.save(); ctx.globalAlpha *= alpha;
-  const tone = chapterToneFor(style.id, env.frame.chapterMood);
-  const accent = tone.strength > 0.01 && style.id === 'atlas' ? `rgb(${tone.rgb.map(Math.round).join(',')})` : skin.accent;
-  text(env, cap.source, area.x, area.y + 20, { role: 'secondary', size: 20, color: accent, maxW: area.w, minSize: 18 });
+/** Переносы и границы главы общие для рисования, легенды и свободного места под выноски. */
+interface ChapterGeometry {
+  area: Rect;
+  cap: ReturnType<typeof chapterCaption>;
+  lines: { str: string; role: 'title' | 'label'; size: number; min: number; baseline: number }[];
+  rect: Rect;
+}
+const chapterGeometryCache = new WeakMap<Chapter, Map<string, ChapterGeometry>>();
+function chapterGeometryKey(env: Env): string {
+  return `${env.layout.format}|${env.style.id}|${env.lang}|${env.k}`;
+}
+function chapterGeometry(env: Env, chapter: Chapter) {
+  let cache = chapterGeometryCache.get(chapter);
+  if (!cache) { cache = new Map(); chapterGeometryCache.set(chapter, cache); }
+  const key = chapterGeometryKey(env), hit = cache.get(key);
+  if (hit) return hit;
+  const area = chapterCaptionRect(env.layout.format, env.style.id);
+  const cap = chapterCaption(env.lang, chapter);
+  const lines: { str: string; role: 'title' | 'label'; size: number; min: number; baseline: number }[] = [];
+  let bottom = area.y + 24;
   let baseline = area.y + 32;
   for (const part of [{ str: cap.title, role: 'title' as const, max: 44, min: 28 }, { str: cap.text, role: 'label' as const, max: 26, min: 22 }]) {
     const measure = (str: string, size: number) => textWidth(env, str, part.role, size);
     const fitted = layoutTitle(part.str, measure, area.w, 2, part.max, part.min, 90, 1.15);
     for (const line of fitted.lines) {
       baseline += fitted.size * 1.15;
-      text(env, line, area.x, baseline, { role: part.role, size: fitted.size, color: skin.ink, maxW: area.w, minSize: part.min });
+      lines.push({ str: line, role: part.role, size: fitted.size, min: part.min, baseline });
+      // Нижние выносные элементы букв находятся ниже базовой линии.
+      const role = env.style.type[part.role];
+      env.ctx.save();
+      env.ctx.font = fontCss(role.family, role.weight, fitted.size);
+      setTracking(env.ctx, 0);
+      const descent = env.ctx.measureText(line).actualBoundingBoxDescent;
+      env.ctx.restore();
+      bottom = Math.max(bottom, baseline + (Number.isFinite(descent) ? descent : fitted.size * 0.25));
     }
     baseline += 6;
+  }
+  const geometry = { area, cap, lines, rect: { ...area, h: bottom - area.y } };
+  cache.set(key, geometry);
+  return geometry;
+}
+
+function drawChapterCaption(env: Env, chapter: Chapter, alpha: number): void {
+  const { ctx, skin, style } = env;
+  const { area, cap, lines } = chapterGeometry(env, chapter);
+  ctx.save(); ctx.globalAlpha *= alpha;
+  const tone = chapterToneFor(style.id, env.frame.chapterMood);
+  const accent = tone.strength > 0.01 && style.id === 'atlas' ? `rgb(${tone.rgb.map(Math.round).join(',')})` : skin.accent;
+  text(env, cap.source, area.x, area.y + 20, { role: 'secondary', size: 20, color: accent, maxW: area.w, minSize: 18 });
+  for (const line of lines) {
+    text(env, line.str, area.x, line.baseline, { role: line.role, size: line.size, color: skin.ink, maxW: area.w, minSize: line.min });
   }
   ctx.restore();
 }
@@ -1427,7 +1462,9 @@ function drawSummary(env: Env, outro: number): void {
   const motion = style.motion;
   const lines = trackLines(env);
   const dock = layout.summaryDock;
-  const heroSize = Math.round(style.type.number.size * (dock === 'bottom' ? 1.55 : 1.5));
+  const scale = layout.readability.summaryScale;
+  const labelSize = style.type.label.size * scale;
+  const heroSize = Math.round(style.type.number.size * (dock === 'bottom' ? 1.55 : 1.5) * scale);
 
   ctx.save();
   ctx.globalAlpha *= clamp01(outro * 1.4);
@@ -1439,13 +1476,13 @@ function drawSummary(env: Env, outro: number): void {
   ctx.beginPath(); ctx.moveTo(box.x, box.y); ctx.lineTo(box.x + box.w, box.y); ctx.stroke();
   ctx.fillStyle = skin.accent;
   ctx.fillRect(box.x, box.y - 2, 96, 4);
-  text(env, t(lang, env.frame.shot && !isWaypointRoute(env.data.route) ? 'film.summary' : 'summary.title'), box.x, box.y + 44, { role: 'kicker', color: skin.accent, maxW: box.w, minSize: 18 });
+  text(env, t(lang, env.frame.shot && !isWaypointRoute(env.data.route) ? 'film.summary' : 'summary.title'), box.x, box.y + 44, { role: 'kicker', size: style.type.kicker.size * scale, color: skin.accent, maxW: box.w, minSize: 18 });
 
   // главное — расстояние
   const heroBase = box.y + 44 + 22 + heroSize * 0.78;
   drawValue(env, hero, outro, box.x, heroBase, heroSize, skin.ink, box.w);
-  const capBase = heroBase + 16 + style.type.label.size * 0.78;
-  text(env, hero.caption, box.x, capBase, { role: 'label', color: skin.muted, maxW: box.w, minSize: 22 });
+  const capBase = heroBase + 16 + labelSize * 0.78;
+  text(env, hero.caption, box.x, capBase, { role: 'label', size: labelSize, color: skin.muted, maxW: box.w, minSize: 22 });
   let noteBase = capBase;
   if (lines.length) {
     const joined = lines.join('  ·  ');
@@ -1482,14 +1519,14 @@ function drawSummary(env: Env, outro: number): void {
     // колонка справа: подпись слева, число — правым краем
     let y = Math.max(noteBase + 30, box.y + 290);
     const rowH = 76;
-    const vs = Math.round(style.type.number.size * 0.75);
+    const vs = Math.round(style.type.number.size * 0.75 * scale);
     extra.forEach((m) => {
       ctx.strokeStyle = skin.rule;
       ctx.beginPath(); ctx.moveTo(box.x, y); ctx.lineTo(box.x + box.w, y); ctx.stroke();
       const unitW = m.unit ? textWidth(env, m.unit, 'secondary', vs * 0.4) + 12 : 0;
       const numW = numberWidth(env, m.value, vs);
       const base = y + 14 + vs * 0.78;
-      text(env, m.caption, box.x, base, { role: 'label', color: skin.muted, maxW: box.w - numW - unitW - 24, minSize: 22 });
+      text(env, m.caption, box.x, base, { role: 'label', size: labelSize, color: skin.muted, maxW: box.w - numW - unitW - 24, minSize: 22 });
       drawValue(env, m, outro, box.x + box.w - numW - unitW, base, vs, skin.ink, box.w * 0.6);
       y += rowH;
     });
@@ -1499,14 +1536,65 @@ function drawSummary(env: Env, outro: number): void {
 
 // ───────────────────────── атрибуция карты ─────────────────────────
 
-function drawAttribution(env: Env): void {
+function attributionGeometry(env: Env): { lines: string[]; size: number; baseline: number; rect: Rect } {
   const { ctx, layout, style } = env;
   const { width, height } = layout;
+  ctx.save();
+  const attribution = attributionText(env.lang, style.attribution);
+  let size = Math.round(Math.min(width, height) * 0.0185);
+  const wide = layout.format === '16:9';
+  const minSize = wide ? 14 : 16;
+  const maxLines = wide ? 2 : 4;
+  // Четыре строки под прогрессом: нижняя базовая линия оставляет запас до safe y=1536.
+  const baseline = wide
+    ? (env.data.settings.info.profile && env.data.route.hasEle ? layout.profile.y - 12 : layout.attribution.y)
+    : layout.attribution.y + 8;
+  setTracking(ctx, 0);
+  // Полная атрибуция, включая новые векторные детали, помещается и в вертикальном кадре.
+  let lines: string[] = [];
+  const maxWidth = layout.attribution.w;
+  // Сохраняем прежнюю полосу под прогрессом (9:16) / над ним (16:9), не сокращая текст.
+  for (; size >= minSize; size--) {
+    ctx.font = fontCss(style.type.secondary.family, 500, size);
+    lines = [];
+    let line = '';
+    for (const word of attribution.split(' ')) {
+      if (line && ctx.measureText(`${line} ${word}`).width > maxWidth) { lines.push(line); line = ''; }
+      line += (line ? ' ' : '') + word;
+    }
+    if (line) lines.push(line);
+    const top = baseline - (lines.length - 1) * size * 1.25 - size;
+    const fitsBand = wide || top >= Math.max(layout.progress.y + layout.progress.h, layout.summary.y + layout.summary.h) + 4;
+    if ((lines.length <= maxLines && fitsBand) || size === minSize) break;
+  }
+  // Не оставляем короткий хвост провайдеров отдельной строкой; текст сохраняется целиком.
+  if (lines.length > 1) {
+    const last = lines.length - 1;
+    const words = lines[last - 1].split(' ');
+    while (words.length > 1 && ctx.measureText(lines[last]).width < maxWidth * 0.4) {
+      const next = `${words[words.length - 1]} ${lines[last]}`;
+      if (ctx.measureText(next).width > maxWidth) break;
+      words.pop(); lines[last] = next;
+    }
+    lines[last - 1] = words.join(' ');
+  }
+  ctx.restore();
+  const top = baseline - (lines.length - 1) * size * 1.25 - size;
+  return { lines, size, baseline, rect: { x: layout.attribution.x, y: top, w: maxWidth, h: baseline + size * 0.25 - top } };
+}
+
+/** Та же область полной атрибуции для обхода географическими выносками. */
+export function overlayAttributionRect(ctx: Ctx, frame: FrameState, data: OverlayData): Rect {
+  const style = data.style;
+  return attributionGeometry({ ctx, frame, data, style, layout: layoutFor(data.settings.format, style.id),
+    skin: SKINS[style.id], lang: data.settings.lang, k: canvasScale(ctx), reconstruction: data.reconstruction }).rect;
+}
+
+function drawAttribution(env: Env): void {
+  const { ctx, layout, style } = env;
+  const { lines, size, baseline } = attributionGeometry(env);
   const light = style.id === 'atlas';
   ctx.save();
-  // подпись стиля написана по-русски («данные OpenStreetMap»): в EN-ролике кириллицы быть не должно
-  const attribution = env.lang === 'en' ? style.attribution.replace(/данные/gi, 'data') : style.attribution;
-  const size = Math.round(Math.min(width, height) * 0.0185);
   ctx.font = fontCss(style.type.secondary.family, 500, size);
   setTracking(ctx, 0);
   ctx.textAlign = 'left';
@@ -1514,16 +1602,14 @@ function drawAttribution(env: Env): void {
   ctx.fillStyle = light ? 'rgba(31,51,45,0.82)' : 'rgba(255,255,255,0.8)';
   ctx.shadowColor = light ? 'rgba(244,240,230,0.85)' : 'rgba(0,0,0,0.7)';
   ctx.shadowBlur = 4 * env.k;
-  // Полная атрибуция, включая новые векторные детали, помещается и в вертикальном кадре.
-  const lines: string[] = [];
-  let line = '';
-  const maxWidth = width - layout.attribution.x * 2;
-  for (const word of attribution.split(' ')) {
-    if (line && ctx.measureText(`${line} ${word}`).width > maxWidth) { lines.push(line); line = ''; }
-    line += (line ? ' ' : '') + word;
-  }
-  if (line) lines.push(line);
-  lines.forEach((text, i) => ctx.fillText(text, layout.attribution.x, layout.attribution.y - (lines.length - 1 - i) * size * 1.25));
+  ctx.strokeStyle = light ? 'rgba(244,240,230,0.95)' : 'rgba(0,0,0,0.9)';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = size * 0.2;
+  lines.forEach((line, i) => {
+    const y = baseline - (lines.length - 1 - i) * size * 1.25;
+    ctx.strokeText(line, layout.attribution.x, y);
+    ctx.fillText(line, layout.attribution.x, y);
+  });
   ctx.restore();
 }
 
@@ -1544,6 +1630,61 @@ export function overlayTitleBottom(ctx: CanvasRenderingContext2D, frame: FrameSt
   const env: Env = { ctx, frame, data, style, layout: layoutFor(data.settings.format, style.id),
     skin: SKINS[style.id], lang: data.settings.lang, k: canvasScale(ctx), reconstruction: data.reconstruction };
   return titleGeometry(env, frame.act === 'outro' ? 'outro' : 'intro').blockBottom;
+}
+
+const OUTRO_SPLIT = 0.4, SLOT_SPLIT = 0.35;
+function overlayPhases(frame: FrameState, settings: StorySettings, style: StyleDef) {
+  const outro = frame.act === 'outro' ? smooth((frame.outroAlpha - OUTRO_SPLIT) / (1 - OUTRO_SPLIT)) : 0;
+  const hud = frame.act === 'intro' ? 0
+    : frame.act === 'outro' ? 1 - smooth(frame.outroAlpha / OUTRO_SPLIT)
+      : smooth((frame.t - introEndOf(settings.durationSec)) / Math.max(0.4, style.motion.appearSec));
+  const card = frame.cards[0];
+  const shown = card && !(card.beat.kind === 'country' && settings.info.country) ? card : null;
+  const raw = shown ? clamp01(shown.alpha) : 0;
+  return { outro, hud, shown, raw, plaqueShare: 1 - smooth(raw / SLOT_SPLIT),
+    cardAlpha: smooth((raw - SLOT_SPLIT) / (1 - SLOT_SPLIT)) };
+}
+
+/** Только видимая глава: те же фазы и пороги, что у рисования. */
+export function overlayChapterRect(ctx: CanvasRenderingContext2D, frame: FrameState, data: OverlayData): Rect | null {
+  const { outro, hud, shown, cardAlpha } = overlayPhases(frame, data.settings, data.style);
+  const chapter = frame.act === 'outro' && outro > 0 && frame.finalChapter ? frame.finalChapter
+    : hud > 0.004 && cardAlpha > 0.004 ? shown?.chapter : undefined;
+  if (!chapter) return null;
+  const style = data.style;
+  const env: Env = { ctx, frame, data, style, layout: layoutFor(data.settings.format, style.id),
+    skin: SKINS[style.id], lang: data.settings.lang, k: canvasScale(ctx), reconstruction: data.reconstruction };
+  return chapterGeometry(env, chapter).rect;
+}
+
+const chapterReserveCache = new WeakMap<Route, {
+  chapters: Route['chapters']; enrichment: Enrichment | null;
+  matched: ReturnType<typeof matchChapters>; rects: Map<string, Rect | null>;
+}>();
+/** Постоянный резерв на весь акт; не зависит от текущей карточки и её прозрачности. */
+export function overlayChapterReserve(ctx: CanvasRenderingContext2D, frame: FrameState, data: OverlayData): Rect | null {
+  if (frame.act === 'intro' || !data.route.chapters?.length) return null;
+  let cache = chapterReserveCache.get(data.route);
+  if (!cache || cache.chapters !== data.route.chapters || cache.enrichment !== data.enrichment) {
+    cache = { chapters: data.route.chapters, enrichment: data.enrichment,
+      matched: data.enrichment ? matchChapters(data.route, data.enrichment) : [], rects: new Map() };
+    chapterReserveCache.set(data.route, cache);
+  }
+  const style = data.style;
+  const env: Env = { ctx, frame, data, style, layout: layoutFor(data.settings.format, style.id),
+    skin: SKINS[style.id], lang: data.settings.lang, k: canvasScale(ctx), reconstruction: data.reconstruction };
+  const key = `${chapterGeometryKey(env)}|${frame.act}`;
+  if (cache.rects.has(key)) return cache.rects.get(key)!;
+  // Финальная глава не входит в карточки пути; в финале резервируем её ещё до проявления.
+  const chapters = frame.act === 'outro' ? cache.matched.filter(m => m.chapter.finale).slice(0, 1)
+    : cache.matched.filter(m => !m.chapter.finale);
+  let rect: Rect | null = null;
+  for (const { chapter } of chapters) {
+    const next = chapterGeometry(env, chapter).rect;
+    if (!rect || next.y + next.h > rect.y + rect.h) rect = next;
+  }
+  cache.rects.set(key, rect);
+  return rect;
 }
 
 export function drawOverlay(ctx: CanvasRenderingContext2D, frame: FrameState, data: OverlayData): void {
@@ -1570,15 +1711,9 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, frame: FrameState, da
   }
 
   // оформление пути проявляется после интро: заголовок уже погас, показателей ещё нет — они не бывают вместе
-  const introEnd = introEndOf(settings.durationSec);
-  const appearSec = Math.max(0.4, style.motion.appearSec);
   // вход в финал — по очереди, без наложения: сначала гаснет оформление пути (плашка, показатели), затем проявляются
   // заголовок и итоги (в слоте заголовка и в зоне итогов в один момент виден только один из двух слоёв)
-  const OUTRO_SPLIT = 0.4;
-  const outro = frame.act === 'outro' ? smooth((frame.outroAlpha - OUTRO_SPLIT) / (1 - OUTRO_SPLIT)) : 0;
-  const hud = frame.act === 'intro' ? 0
-    : frame.act === 'outro' ? 1 - smooth(frame.outroAlpha / OUTRO_SPLIT)
-      : smooth((frame.t - introEnd) / appearSec);
+  const { outro, hud, shown, raw, plaqueShare, cardAlpha } = overlayPhases(frame, settings, style);
   const wide = layout.format === '16:9';
 
   if (frame.act === 'intro' || frame.act === 'outro') {
@@ -1598,15 +1733,9 @@ export function drawOverlay(ctx: CanvasRenderingContext2D, frame: FrameState, da
   }
 
   if (hud > 0.004) {
-    const card = frame.cards[0];
     // при включённой «Стране» въезд показывает плашка — отдельная карточка была бы дублем
-    const shown = card && !(card.beat.kind === 'country' && data.settings.info.country) ? card : null;
     // слот один: плашка страны гаснет до нуля, пока карточка набирает первую треть яркости, и возвращается после неё —
     // обе не бывают видны одновременно (никакого наложения друг на друга в одном месте)
-    const raw = shown ? clamp01(shown.alpha) : 0;
-    const SLOT_SPLIT = 0.35;
-    const plaqueShare = 1 - smooth(raw / SLOT_SPLIT);
-    const cardAlpha = smooth((raw - SLOT_SPLIT) / (1 - SLOT_SPLIT));
     // показатели пути — только когда голова пошла по маршруту (на спуске к старту она может стоять под зоной показателей)
     const moving = isWaypointRoute(data.route) && !data.route.waypointOrderConfirmed ? 1 : smooth(frame.stats.progress / 0.012);
     const stats = hud * moving;

@@ -158,7 +158,7 @@ describe('показатели без выдуманных цифр (истор�
     const out = draw(fs[fs.length - 1], s);
     const text = out.texts.join('|');
     expect(rowsOf(out)).toContain(String(facts.nightsTotal));
-    expect(text).toContain('место ночёвок');
+    expect(text).toContain('место ночёвки');
     expect(text).not.toMatch(/дн\S* · по меткам/);
     expect(text).toContain('меток');
     for (const banned of ['пройдено', 'по треку', 'разрывы', 'макс. высота', 'км', 'по прямой', 'не менее']) expect(text).not.toContain(banned);

@@ -5,7 +5,7 @@ import { createGeoIndex, enrichRoute } from '../../src/geo';
 import type { CountriesJson, PlacesJson } from '../../src/geo';
 import { buildRoute, parseRouteText } from '../../src/route';
 import { layoutFor, timelineOptionsFor, WORK_AREA } from '../../src/render/layout';
-import { drawOverlay } from '../../src/render/overlay';
+import { drawOverlay, overlayAttributionRect } from '../../src/render/overlay';
 import { drawCinematicGeography } from '../../src/render/cinematic';
 import { prepareTrack } from '../../src/render/track';
 import { STYLES } from '../../src/render/styles';
@@ -16,6 +16,7 @@ import placesRaw from '../../public/data/places.json?raw';
 import sampleGpx from '../../public/samples/wahrier-reconstruction.gpx?raw';
 import { settings as baseSettings } from '../story/fixtures';
 import { recorder } from './overlay-recorder';
+import sceneSource from '../../src/render/scene.ts?raw';
 
 const geo = createGeoIndex(JSON.parse(countriesRaw) as CountriesJson, JSON.parse(placesRaw) as PlacesJson);
 const parsed = parseRouteText('wahrier-reconstruction.gpx', sampleGpx);
@@ -50,6 +51,95 @@ const sizesOf = (fonts: Set<string>, weight: number, family: string) =>
 
 const FORMATS: Format[] = ['9:16', '16:9'];
 const STYLE_IDS: StyleId[] = ['epic', 'atlas', 'neon'];
+
+it('scene draws the route without an attribution clip in either format', () => {
+  expect(sceneSource).toContain('drawTrackLayer({');
+  expect(sceneSource).not.toMatch(/\bctx\.clip\s*\(/);
+  expect(sceneSource).not.toContain('overlayAttributionRect');
+});
+
+it.each(FORMATS)('%s: attribution strokes each line before filling it, with a contrasting rounded halo', format => {
+  for (const styleId of STYLE_IDS) for (const lang of ['ru', 'en'] as const) {
+    const s = cfg({ format, styleId, lang });
+    const rec = recorder();
+    const calls: { op: string; text: string; x: number; y: number; color: string | CanvasGradient | CanvasPattern; join: string; width: number; size: number }[] = [];
+    const ctx = new Proxy(rec.ctx, {
+      get(target, prop) {
+        if (prop === 'strokeText' || prop === 'fillText') return (text: string, x: number, y: number) => {
+          calls.push({ op: prop, text, x, y, color: target.strokeStyle, join: target.lineJoin, width: target.lineWidth, size: px(target.font) });
+          target[prop](text, x, y);
+        };
+        return Reflect.get(target, prop);
+      },
+    });
+    drawOverlay(ctx, timelineOf(s).frameAt(10), { route, enrichment, settings: s, style: STYLES[styleId], reconstruction: true });
+    const lastRestore = rec.ops.lastIndexOf('restore:');
+    const attrStart = rec.ops.lastIndexOf('save:', lastRestore);
+    const attributionCalls = calls.slice(-rec.ops.slice(attrStart).filter(op => /^(strokeText|fillText):/.test(op)).length);
+    expect(attributionCalls.length).toBeGreaterThan(0);
+    expect(attributionCalls.length % 2).toBe(0);
+    expect(attributionCalls.length / 2).toBeLessThanOrEqual(format === '9:16' ? 4 : 2);
+    for (let i = 0; i < attributionCalls.length; i += 2) {
+      const stroke = attributionCalls[i], fill = attributionCalls[i + 1];
+      expect(stroke.op).toBe('strokeText');
+      expect(stroke.size).toBeGreaterThanOrEqual(format === '9:16' ? 16 : 14);
+      expect(fill.op).toBe('fillText');
+      expect([stroke.text, stroke.x, stroke.y]).toEqual([fill.text, fill.x, fill.y]);
+      expect(stroke.join).toBe('round');
+      expect(stroke.width / stroke.size).toBeCloseTo(0.2);
+      expect(stroke.color).toBe(styleId === 'atlas' ? 'rgba(244,240,230,0.95)' : 'rgba(0,0,0,0.9)');
+    }
+    expect(attributionCalls.filter(call => call.op === 'fillText').map(call => call.text).join(' '))
+      .toBe(lang === 'en' ? STYLES[styleId].attribution.replace(/данные/gi, 'data').replace('цвет изменён', 'colour adjusted') : STYLES[styleId].attribution);
+  }
+});
+
+it.each(FORMATS)('%s: полная атрибуция и все титры внутри safe; атрибуция обходит профиль, прогресс и итоги', format => {
+  for (const styleId of STYLE_IDS) for (const lang of ['ru', 'en'] as const) {
+    const s = cfg({ format, styleId, lang, on: ['distance', 'progress', 'country', 'day', 'date', 'altitude', 'speed', 'city', 'profile'] });
+    const tl = timelineOf(s), l = layoutFor(format, styleId);
+    for (const time of [2, 10, 20, 28]) {
+      const frame = tl.frameAt(time), rec = draw(frame, s);
+      const data = { route, enrichment, settings: s, style: STYLES[styleId], reconstruction: true };
+      const attr = overlayAttributionRect(rec.ctx, frame, data);
+      for (const r of [...rec.textRects, attr]) {
+        expect(r.x).toBeGreaterThanOrEqual(l.safeRect.x);
+        expect(r.y, `${styleId}/${lang}/${time}: ${'text' in r ? r.text : 'attribution'}`).toBeGreaterThanOrEqual(l.safeRect.y);
+        expect(r.x + r.w).toBeLessThanOrEqual(l.safeRect.x + l.safeRect.w);
+        expect(r.y + r.h, `${styleId}/${lang}/${time}: ${'text' in r ? r.text : 'attribution'}`).toBeLessThanOrEqual(l.safeRect.y + l.safeRect.h);
+      }
+      if (format === '9:16') {
+        expect(attr.x).toBe(l.work.x);
+        expect(attr.y + attr.h).toBeLessThanOrEqual(1536);
+        expect(attr.y).toBeGreaterThan(l.progress.y + l.progress.h);
+        expect(attr.y).toBeGreaterThan(l.summary.y + l.summary.h);
+      }
+      const protectedAreas = frame.act === 'journey' ? [l.profile, l.progress] : [l.summary];
+      for (const r of protectedAreas) expect(attr.y + attr.h <= r.y || attr.y >= r.y + r.h).toBe(true);
+      const last = rec.ops.filter(op => op.startsWith('fillText:')).map(op => op.slice(9, op.lastIndexOf('@'))).slice(-STYLES[styleId].attribution.split(' ').length);
+      expect(last.join(' ')).toContain(lang === 'en' ? STYLES[styleId].attribution.replace('цвет изменён', 'colour adjusted') : STYLES[styleId].attribution);
+    }
+  }
+});
+
+it.each(['ru', 'en'] as const)('9:16 %s: полная лицензия EOxCloudless 2016 с ореолом выше y=1536 и ниже прогресса', lang => {
+  const s = cfg({ format: '9:16', styleId: 'epic', lang });
+  const frame = timelineOf(s).frameAt(10), rec = draw(frame, s);
+  const start = rec.ops.lastIndexOf('save:');
+  const lines = rec.ops.slice(start).filter(op => op.startsWith('fillText:'));
+  const text = lines.map(op => op.slice(9, op.lastIndexOf('@'))).join(' ');
+  expect(lines.length).toBeLessThanOrEqual(4);
+  expect(text).toContain('EOxCloudless 2016 https://cloudless.eox.at');
+  expect(text).toContain('CC BY 4.0 https://creativecommons.org/licenses/by/4.0/');
+  expect(text).toContain(lang === 'ru' ? 'цвет изменён' : 'colour adjusted');
+  expect(text).toContain('Copernicus EU-DEM');
+  expect(text).toContain('(Contains modified Copernicus Sentinel data 2016 & 2017)');
+  expect(text).not.toMatch(/arcgisonline|esri/i);
+  const attr = overlayAttributionRect(rec.ctx, frame, { route, enrichment, settings: s, style: STYLES.epic, reconstruction: true });
+  // Половина stroke (до 2 px) также остаётся внутри полосы.
+  expect(attr.y - 2).toBeGreaterThan(layoutFor('9:16').progress.y + layoutFor('9:16').progress.h);
+  expect(attr.y + attr.h + 2).toBeLessThan(1536);
+});
 
 it('легенда DEM ниже полного двухстрочного заголовка с датами и автором', () => {
   const s = cfg({ format: '9:16' }), frame = timelineOf(s).frameAt(2), rec = recorder();

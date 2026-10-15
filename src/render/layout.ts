@@ -15,6 +15,12 @@ export interface Layout {
   height: number;
   /** Множитель типографики: размеры шрифтов берутся из StyleDef.type в дизайн-пикселях Full HD, поэтому 1 в обоих форматах. */
   scale: number;
+  /** Читаемость оформления в Full HD; камера и геометрия маршрута от этих размеров не зависят. */
+  readability: {
+    countryScale: number; summaryScale: number; overviewLineScale: number;
+    calloutTitle: number; calloutDetail: number; calloutHeight: number;
+    legendSize: number; legendHeight: number;
+  };
   /** Отступы безопасной зоны площадки, дизайн-пиксели: сюда нельзя ставить важное. */
   safe: Insets;
   safeRect: Rect;
@@ -42,8 +48,8 @@ export interface Layout {
   /** Итоги финала и место, где они стоят относительно маршрута. */
   summary: Rect;
   summaryDock: 'bottom' | 'right';
-  /** Левый нижний угол мелкой атрибуции карты. */
-  attribution: { x: number; y: number };
+  /** Левая граница, последняя базовая линия и ширина полной атрибуции карты. */
+  attribution: { x: number; y: number; w: number };
 }
 
 /** Рабочая зона по историям 82 (9:16: x 64…900, y 240…1506) и 83 (16:9: x 96…1824, y 72…1008). */
@@ -71,26 +77,34 @@ export function layoutFor(format: Format, _styleId: StyleId = 'epic'): Layout {
   const f = SAFE[format];
   const safe: Insets = { top: height * f.top, right: width * f.right, bottom: height * f.bottom, left: width * f.left };
   const safeRect = rect(safe.left, safe.top, width - safe.left - safe.right, height - safe.top - safe.bottom);
-  const attribution = { x: width * 0.02, y: height - Math.min(width, height) * 0.012 };
   const work = WORK_AREA[format];
+  const wide = format === '16:9';
+  const attribution = { x: work.x, y: wide ? 987 : 1516, w: work.w };
+  const readability = {
+    countryScale: wide ? 1.1875 : 1, summaryScale: wide ? 1.16 : 1,
+    overviewLineScale: wide ? 1.22 : 1,
+    calloutTitle: wide ? 34 : 28, calloutDetail: wide ? 28 : 22,
+    calloutHeight: wide ? 108 : 90,
+    legendSize: wide ? 24 : 22, legendHeight: wide ? 40 : 36,
+  };
 
   if (format === '9:16') {
     const { x, w } = work;
     return {
-      format, width, height, scale: 1, safe, safeRect, work,
+      format, width, height, scale: 1, readability, safe, safeRect, work,
       caption: rect(x, 250, w, 124),
-      stats: rect(x, 1100, w, 366), statsAnchor: 'bottom', statsColumns: 2,
-      profile: rect(x, 1384, w, 82),
-      progress: rect(x, 1486, w, 10),
+      stats: rect(x, 1040, w, 366), statsAnchor: 'bottom', statsColumns: 2,
+      profile: rect(x, 1324, w, 82),
+      progress: rect(x, 1426, w, 10),
       title: rect(x, 250, w, 280), titleAlign: 'left', titleMaxLines: 3,
       route: rect(140, 570, 700, 490),
-      summary: rect(x, 1140, w, 360), summaryDock: 'bottom',
+      summary: rect(x, 1080, w, 360), summaryDock: 'bottom',
       attribution,
     };
   }
   return {
-    format, width, height, scale: 1, safe, safeRect, work,
-    caption: rect(96, 72, 760, 124),
+    format, width, height, scale: 1, readability, safe, safeRect, work,
+    caption: rect(96, 100, 760, 124),
     stats: rect(1390, 96, 434, 700), statsAnchor: 'top', statsColumns: 1,
     profile: rect(96, 900, 1728, 80),
     progress: rect(96, 994, 1728, 10),
@@ -161,14 +175,17 @@ export function timelineOptionsFor(format: Format, styleId: StyleId = 'epic'): T
  * Заголовок ограничен title.h в layoutTitle; интервалы служебных строк совпадают с titleGeometry.
  * Дизайн-пиксели, как остальные зоны оформления. GPX использует прежнее размещение подписей.
  */
-export function waypointOverviewObstacles(format: Format, style: StyleDef): Rect[] {
-  const { title, summary } = layoutFor(format, style.id);
+export function waypointOverviewObstacles(format: Format, style: StyleDef, purpose: 'labels' | 'lines' = 'labels'): Rect[] {
+  const { title, summary, attribution } = layoutFor(format, style.id);
   const rise = style.motion.appear === 'fade-rise' ? style.motion.rise : 0;
   const afterTitle = 16 + 22 + style.type.kicker.size * 0.9 + 14 + style.type.secondary.size * 0.9 + 12;
   const pad = 24; // в том числе тень заголовка
   return [
     { x: title.x - pad, y: title.y - pad, w: title.w + pad * 2, h: title.h + afterTitle + rise + pad * 2 },
     { x: summary.x - pad, y: summary.y - pad, w: summary.w + pad * 2, h: summary.h + rise + pad * 2 },
+    // Атрибуция защищена только от подписей; соединения меток проходят без обрезки.
+    ...(purpose === 'labels' ? [{ x: attribution.x - 6, y: attribution.y - (format === '9:16' ? 76 : 46),
+      w: attribution.w + 12, h: format === '9:16' ? 92 : 51 }] : []),
   ];
 }
 

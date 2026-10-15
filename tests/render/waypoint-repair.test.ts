@@ -115,7 +115,7 @@ describe('ремонт порядка меток', () => {
       // Пять ночёвочных меток в один день остаются одной ночью и в итогах, а не только в чистом модуле.
       const summary = recorder();
       drawOverlay(summary.ctx, tl.frameAt(30), { route, enrichment: e, settings: s, style: STYLES[styleId], reconstruction: false });
-      expect(summary.texts).toContain('мест ночёвок');
+      expect(summary.texts).toContain('мест ночёвки');
       expect(summary.texts).not.toContain('день · по меткам');
       expect(summary.texts).toContain('5');
     }

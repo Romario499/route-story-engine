@@ -1,10 +1,11 @@
 import { RU, EN } from '../../src/i18n/messages';
 import { describe, expect, it } from 'vitest';
 import {
-  OVERLAY_KEYS, beatTitle, countryName, formatAltitude, formatDate, formatDateRange, formatDistance, formatSpeed,
+  OVERLAY_KEYS, attributionText, beatTitle, countryName, formatAltitude, formatDate, formatDateRange, formatDistance, formatSpeed,
   placeName, t, transportTitle,
 } from '../../src/i18n';
 import type { Beat, Country, Lang, Place, TransportChange } from '../../src/types';
+import { STYLES } from '../../src/render/styles';
 
 const LANGS: Lang[] = ['ru', 'en'];
 const georgia: Country = { iso2: 'GE', nameRu: 'Грузия', nameEn: 'Georgia' };
@@ -12,6 +13,14 @@ const batumi: Place = { nameRu: 'Батуми', nameEn: 'Batumi', lat: 41.64, lo
 const may12 = Date.UTC(2024, 4, 12, 10, 0, 0);
 
 describe('i18n — ключи', () => {
+  it.each(LANGS)('%s: атрибуция сохраняет прежний текст, ссылки и пояснение об изменении цвета', lang => {
+    const source = 'EOxCloudless 2016 https://cloudless.eox.at by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016 & 2017), CC BY 4.0 https://creativecommons.org/licenses/by/4.0/';
+    const providers = 'OpenFreeMap © OpenMapTiles Data from OpenStreetMap · Terrain Tiles on AWS (SRTM, USGS, NOAA, Copernicus EU-DEM)';
+    expect(attributionText(lang, STYLES.epic.attribution)).toBe(
+      `${source}, ${lang === 'ru' ? 'цвет изменён' : 'colour adjusted'} · ${providers}`,
+    );
+    expect(attributionText(lang, 'Provider · ДАННЫЕ / данные')).toBe(lang === 'ru' ? 'Provider · ДАННЫЕ / данные' : 'Provider · data / data');
+  });
   it('разрыв: неизвестный путь и расстояние между концами, RU/EN', () => {
     expect(t('ru', 'gap.unknown')).toBe('Разрыв записи · путь неизвестен');
     expect(t('en', 'gap.unknown')).toBe('Recording gap · path unknown');
@@ -153,6 +162,13 @@ describe('i18n — маршрут по меткам (ADR 0010)', () => {
     expect(transportTitle('en', change('unicycle', 'inferred'))).toMatch(/inferred/);
     expect(transportTitle('ru', change('unknown', 'unknown'))).toBe('Способ неизвестен');
     expect(t('ru', 'transport.change')).toBe('Смена транспорта');
+  });
+
+  it('склонение мест ночёвки в итогах: 1/21/161 место, 2 места, 5/11/12 мест — всегда «ночёвки»', () => {
+    const f = (n: number) => `${n} ${t('ru', 'summary.overnightPlaces', { n })}`;
+    expect([1, 2, 5, 11, 12, 21, 22, 161].map(f)).toEqual(['1 место ночёвки', '2 места ночёвки', '5 мест ночёвки', '11 мест ночёвки',
+      '12 мест ночёвки', '21 место ночёвки', '22 места ночёвки', '161 место ночёвки']);
+    expect([1, 5].map((n) => t('en', 'summary.overnightPlaces', { n }))).toEqual(['overnight place', 'overnight places']);
   });
 
   it('склонение ночёвок', () => {

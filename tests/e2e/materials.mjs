@@ -16,7 +16,7 @@ export function sha256(path) { return createHash('sha256').update(readFileSync(p
 export async function restrictNetwork(context) {
   await context.route('**/*', route => {
     const url = new URL(route.request().url());
-    if (['localhost', '127.0.0.1', 'server.arcgisonline.com', 's3.amazonaws.com', 'tiles.openfreemap.org'].includes(url.hostname)
+    if (['localhost', '127.0.0.1', 'tiles.maps.eox.at', 's3.amazonaws.com', 'tiles.openfreemap.org'].includes(url.hostname)
       || ['blob:', 'data:'].includes(url.protocol)) return route.continue();
     return route.abort('blockedbyclient');
   });

@@ -54,12 +54,12 @@ describe('layoutFor 9:16: композиция по истории 82', () => {
     expect(l.profile.y + l.profile.h).toBeLessThanOrEqual(l.progress.y);
   });
 
-  it('финал — маршрут в y≈570…1060, итоги в y≈1140…1500', () => {
+  it('финал — маршрут в y≈570…1060, итоги в y≈1080…1440', () => {
     expect(l.route.y).toBe(570);
     expect(l.route.y + l.route.h).toBe(1060);
     expect(l.summaryDock).toBe('bottom');
-    expect(l.summary.y).toBe(1140);
-    expect(l.summary.y + l.summary.h).toBe(1500);
+    expect(l.summary.y).toBe(1080);
+    expect(l.summary.y + l.summary.h).toBe(1440);
     // заголовок финала заканчивается выше маршрута
     expect(l.title.y + l.title.h).toBeLessThanOrEqual(l.route.y);
   });

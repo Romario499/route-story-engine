@@ -182,10 +182,13 @@ import { FPS, type Format, type Lang } from '../../src/types';
 import { settings as baseSettings } from '../story/fixtures';
 import { beatTitle } from '../../src/i18n';
 
-it('подписи не пересекают полный титр, итоги, рабочую зону и друг друга на каждом кадре интро/финала, RU/EN × epic/atlas × оба формата', () => {
-  const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
-  const contains = (a: Rect, b: Rect) => b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w + 0.01 && b.y + b.h <= a.y + a.h + 0.01;
-  for (const format of ['9:16', '16:9'] as Format[]) for (const styleId of ['epic', 'atlas'] as const) for (const lang of ['ru', 'en'] as Lang[]) {
+// Матрица RU/EN × epic/atlas × оба формата разложена на 8 отдельных тестов: подбор места подписей (placeWaypointLabel) на каждом
+// кадре — чистый CPU, ~0,7 с на комбинацию. Одним тестом это ~5,5 с в одиночку и упиралось в testTimeout (20 с) при параллельном
+// `npm run check` (71 файл делят процессор). Проверяются те же кадры и те же комбинации; таймаут на каждую — свой.
+const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const contains = (a: Rect, b: Rect) => b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w + 0.01 && b.y + b.h <= a.y + a.h + 0.01;
+describe('подписи не пересекают полный титр, итоги, рабочую зону и друг друга на каждом кадре интро/финала', () => {
+  for (const format of ['9:16', '16:9'] as Format[]) for (const styleId of ['epic', 'atlas'] as const) for (const lang of ['ru', 'en'] as Lang[]) it(`${format} ${styleId} ${lang}`, () => {
     const title = lang === 'ru' ? 'Путешествие экспедиция' : 'Mountains expedition';
     const settings = baseSettings({ format, styleId, lang, title, author: lang === 'ru' ? 'Автор путешествия' : 'Journey author' });
     const style = STYLES[styleId], layout = layoutFor(format, styleId), view = MAP_VIEWPORT[format];
@@ -240,5 +243,5 @@ it('подписи не пересекают полный титр, итоги, 
     expect(titleFrames).toBeGreaterThan(100);
     expect(summaryFrames).toBeGreaterThan(30);
     expect(labels).toBeGreaterThan(500);
-  }
+  });
 });

@@ -136,6 +136,6 @@ it('статистика считает различные места ночёв
     const frame = buildTimeline(route, e, s).frameAt(30);
     drawOverlay(rec.ctx, frame, { route, enrichment: e, settings: s, style: STYLES.epic, reconstruction: false });
     expect(rec.texts.join(' ')).not.toMatch(/дн[яе]|день|\bday|\bnights?\b/i);
-    expect(rec.texts.join(' ')).toMatch(lang === 'ru' ? /мест[ао]? ночёвок/i : /overnight places/i);
+    expect(rec.texts.join(' ')).toMatch(lang === 'ru' ? /мест[ао]? ночёвки/i : /overnight places/i);
   }
 });

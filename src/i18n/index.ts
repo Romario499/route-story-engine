@@ -18,6 +18,14 @@ export function t(lang: Lang, key: OverlayKey, vars: Vars = {}): string {
 }
 
 const NBSP = ' ';
+
+/** Локализуем пояснения атрибуции стиля, сохраняя имена источников и ссылки дословно. */
+export function attributionText(lang: Lang, attribution: string): string {
+  if (lang === 'ru') return attribution;
+  return attribution
+    .replace(new RegExp(t('ru', 'attribution.data'), 'gi'), t(lang, 'attribution.data'))
+    .replace(t('ru', 'attribution.colourAdjusted'), t(lang, 'attribution.colourAdjusted'));
+}
 const LOCALE: Record<Lang, string> = { ru: 'ru-RU', en: 'en-GB' };
 const fmtCache = new Map<string, Intl.NumberFormat>();
 function numberFormat(lang: Lang, digits: number): Intl.NumberFormat {

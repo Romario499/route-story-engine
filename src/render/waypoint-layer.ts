@@ -144,7 +144,7 @@ export function drawWaypointLayer(a: WaypointLayerArgs): void {
 
   const passed: Record<LegKind, Seg[]> = { unicycle: [], train: [], unknown: [] };
   const ghost: Record<LegKind, Seg[]> = { unicycle: [], train: [], unknown: [] };
-  const obstacles = frame.act === 'journey' ? [] : waypointOverviewObstacles(view.width < view.height ? '9:16' : '16:9', style)
+  const obstacles = frame.act === 'journey' ? [] : waypointOverviewObstacles(view.width < view.height ? '9:16' : '16:9', style, 'lines')
     .map(r => ({ x: css(r.x), y: css(r.y), w: css(r.w), h: css(r.h) }));
   obstacles.push(...(a.labelObstacles ?? []));
   const add = (list: Seg[], x1: number, y1: number, x2: number, y2: number) => {

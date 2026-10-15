@@ -53,7 +53,7 @@ describe('drawOverlay: все тексты ролика на выбранном 
     draw(tl.frameAt(tl.durationSec), s, sampleRoute, sampleEnrichment, rec);
     const all = [...new Set(rec.texts)];
     expect(all.length).toBeGreaterThan(20);
-    const allowed = /wahrier|OpenFreeMap|Esri|AWS|Imagery|Terrain|OpenMapTiles|OpenStreetMap|Shaded|Relief/i;
+    const allowed = /wahrier|OpenFreeMap|EOxCloudless|EOX|Copernicus|Sentinel|AWS|Imagery|Terrain|OpenMapTiles|OpenStreetMap|Shaded|Relief/i;
     const leaked = all.filter((txt) => (lang === 'en' ? CYRILLIC.test(txt) : /[A-Za-z]{4,}/.test(txt) && !allowed.test(txt)));
     expect(leaked, `чужой язык: ${leaked.join(' | ')}`).toEqual([]);
   });

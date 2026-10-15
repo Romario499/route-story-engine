@@ -3,7 +3,7 @@ import { isWaypointRoute } from '../story/legs';
 import type { Enrichment, FrameState, Route, StorySettings } from '../types';
 import { placeCallout } from './callouts';
 import { FONT_FAMILIES } from './fonts';
-import { overlayTitleBottom } from './overlay';
+import { overlayAttributionRect, overlayChapterRect, overlayChapterReserve, overlayTitleBottom } from './overlay';
 import { layoutFor, type Rect } from './layout';
 import type { StyleDef } from './styles';
 import type { Project, TrackModel } from './track';
@@ -37,17 +37,26 @@ export function drawCinematicGeography(ctx: CanvasRenderingContext2D, frame: Fra
   dem: boolean, reconstruction: boolean, terrainScale = 1): void {
   if (!frame.shot) return;
   const l = layoutFor(settings.format, style.id), lang = settings.lang;
+  const sizes = l.readability;
   const mark = isWaypointRoute(route), overview = mark && !route.waypointOrderConfirmed;
   ctx.save();
-  ctx.font = `500 22px '${FONT_FAMILIES.mono}', monospace`;
+  ctx.font = `500 ${sizes.legendSize}px '${FONT_FAMILIES.mono}', monospace`;
   ctx.textBaseline = 'alphabetic';
   const source = t(lang, mark ? 'film.marks' : reconstruction ? 'film.reconstruction' : 'film.recorded');
   const terrain = dem ? `${t(lang, 'film.dem')} ×${terrainScale.toFixed(2)}` : t(lang, 'film.flat');
   const trust = `${source} · ${terrain}`;
-  const ty = frame.act === 'journey' ? l.caption.y + l.caption.h + 56 :
-    overlayTitleBottom(ctx, frame, { route, enrichment, settings, style, reconstruction }) + 46;
-  ctx.fillStyle = style.palette.cardBg; ctx.fillRect(l.work.x, ty - 26, Math.min(l.work.w, ctx.measureText(trust).width + 24), 36);
-  ctx.fillStyle = style.palette.text; ctx.fillText(trust, l.work.x + 10, ty);
+  const data = { route, enrichment, settings, style, reconstruction };
+  const chapter = overlayChapterRect(ctx, frame, data);
+  const reserve = overlayChapterReserve(ctx, frame, data);
+  const ty = Math.max(frame.act === 'journey' ? l.caption.y + l.caption.h + 56 :
+    overlayTitleBottom(ctx, frame, data) + 46, reserve ? reserve.y + reserve.h + 46 : 0);
+  const legendTop = ty - sizes.legendSize - 4;
+  // В широком кадре оставляем колонку показателей/итогов свободной, в вертикальном — рабочую ширину.
+  const maxLegendWidth = settings.format === '16:9'
+    ? (frame.act === 'outro' ? l.summary.x : l.stats.x) - l.work.x - 20 : l.work.w;
+  const legend = { x: l.work.x, y: legendTop, w: Math.min(maxLegendWidth, ctx.measureText(trust).width + 24), h: sizes.legendHeight };
+  ctx.fillStyle = style.palette.cardBg; ctx.fillRect(legend.x, legend.y, legend.w, legend.h);
+  ctx.fillStyle = style.palette.text; ctx.fillText(trust, legend.x + 10, ty, legend.w - 24);
   if (overview) { ctx.restore(); return; } // Подписи T24; нумерация не создаёт хронологию меток.
   // Настоящая координата из файла, без интерполяции между сегментами.
   const idx = frame.act === 'intro' ? 0 : frame.act === 'outro' ? route.points.length - 1 : Math.floor(frame.head);
@@ -62,18 +71,21 @@ export function drawCinematicGeography(ctx: CanvasRenderingContext2D, frame: Fra
   const coords = `${p.lat.toFixed(4)}° / ${p.lon.toFixed(4)}°`;
   const detail = !mark && p.ele !== undefined && Number.isFinite(p.ele) ?
     `${coords} · ${formatAltitude(lang, p.ele)}` : coords;
-  ctx.font = `600 28px ${style.fonts.label}`;
+  ctx.font = `600 ${sizes.calloutTitle}px ${style.fonts.label}`;
   const titleWidth = ctx.measureText(title).width;
-  ctx.font = `500 22px '${FONT_FAMILIES.mono}', monospace`;
-  const w = Math.min(l.work.w, Math.max(titleWidth, ctx.measureText(detail).width) + 88), h = 90;
+  ctx.font = `500 ${sizes.calloutDetail}px '${FONT_FAMILIES.mono}', monospace`;
+  const detailWidth = ctx.measureText(detail).width;
+  const w = Math.min(l.work.w, settings.format === '16:9' ? Math.max(titleWidth + 68, detailWidth + 32) :
+    Math.max(titleWidth, detailWidth) + 88), h = sizes.calloutHeight;
   const segments: [number, number, number, number][] = [];
   for (let k = 1; k < model.n; k++) {
     if (model.transferSeg[k - 1] || !model.have[k - 1] || !model.have[k]) continue;
     segments.push([model.sx[k - 1] * 2, model.sy[k - 1] * 2, model.sx[k] * 2, model.sy[k] * 2]);
   }
-  const reserved: Rect[] = [l.caption, l.stats, l.profile,
+  const reserved: Rect[] = [chapter ?? l.caption, l.stats, l.profile,
     ...(model.labelBoxes ?? []).map(r => ({ x: r.x * 2, y: r.y * 2, w: r.w * 2, h: r.h * 2 })),
-    { x: l.work.x, y: ty - 26, w: l.work.w, h: 36 },
+    { x: l.work.x, y: legendTop, w: l.work.w, h: sizes.legendHeight },
+    overlayAttributionRect(ctx, frame, { route, enrichment, settings, style, reconstruction }),
     ...(frame.act !== 'journey' ? [l.title, l.summary] : [])];
   const bounds = frame.act !== 'journey' && l.summaryDock === 'right' ?
     { ...l.work, w: l.summary.x - 20 - l.work.x } : l.work;
@@ -88,10 +100,10 @@ export function drawCinematicGeography(ctx: CanvasRenderingContext2D, frame: Fra
     ctx.beginPath(); ctx.arc(box.x + 28, box.y + 30, 17, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = style.palette.text; ctx.font = `500 18px '${FONT_FAMILIES.mono}', monospace`;
     ctx.textAlign = 'center'; ctx.fillText(String(frame.shot.number).padStart(2, '0'), box.x + 28, box.y + 36);
-    ctx.textAlign = 'left'; ctx.font = `600 28px ${style.fonts.label}`;
-    ctx.fillText(title, box.x + 56, box.y + 37, box.w - 68);
-    ctx.font = `500 22px '${FONT_FAMILIES.mono}', monospace`;
-    ctx.fillStyle = style.palette.secondary; ctx.fillText(detail, box.x + 16, box.y + 70, box.w - 32);
+    ctx.textAlign = 'left'; ctx.font = `600 ${sizes.calloutTitle}px ${style.fonts.label}`;
+    ctx.fillText(title, box.x + 56, box.y + 37 + (sizes.calloutTitle - 28), box.w - 68);
+    ctx.font = `500 ${sizes.calloutDetail}px '${FONT_FAMILIES.mono}', monospace`;
+    ctx.fillStyle = style.palette.secondary; ctx.fillText(detail, box.x + 16, box.y + h - 20, box.w - 32);
   }
   ctx.restore();
 }

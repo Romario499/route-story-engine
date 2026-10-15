@@ -281,7 +281,7 @@ function placeWaypointLabel(a: TrackDrawArgs, text: string, x: number, y: number
   // в свободные прямоугольники, уменьшая кегль только до самой мелкой роли стиля.
   // Последний резерв — край кадра, тоже с проверкой препятствий. Пунктир под
   // выбранной плашкой обрезается drawWaypointLayer; выноска сохраняет привязку.
-  const minimum = css(Math.min(a.style.type.kicker.size, a.style.type.secondary.size));
+  const minimum = css(format === '16:9' ? 24 : Math.min(a.style.type.kicker.size, a.style.type.secondary.size));
   for (const area of [{ x: left, y: top, w: right - left, h: bottom - top },
     { x: 5, y: 5, w: a.view.width - 10, h: a.view.height - 10 }]) {
     const edgesX = [...new Set([area.x, area.x + area.w, ...occupied.flatMap(r => [r.x - gap, r.x + r.w + gap])])]
@@ -413,7 +413,8 @@ export function drawTrackLayer(a: TrackDrawArgs): void {
   m.labelBoxes = [];
   if (m.n < 2) return;
   const L = style.line;
-  const width = css(L.width);
+  const format = view.width < view.height ? '9:16' : '16:9';
+  const width = css(L.width) * (frame.act === 'journey' ? 1 : layoutFor(format, style.id).readability.overviewLineScale);
   const cam = frame.camera;
   if (isWaypointRoute(route) && !route.waypointOrderConfirmed) {
     drawWaypointLayer({ ctx, route, frame, project: a.project, style, view });
@@ -459,7 +460,7 @@ export function drawTrackLayer(a: TrackDrawArgs): void {
     });
     // Если первая плашка заняла единственный большой карман, переразмещаем обе
     // у границ свободных областей, а не возвращаем вторую на исходное препятствие.
-    const minimum = css(Math.min(style.type.kicker.size, style.type.secondary.size));
+    const minimum = css(format === '16:9' ? 24 : Math.min(style.type.kicker.size, style.type.secondary.size));
     const sizes = [css(style.type.label.size)];
     for (let size = css(style.type.label.size); size >= minimum; size--) sizes.push(size);
     for (const [attempt, size] of sizes.entries()) {

@@ -53,7 +53,10 @@ describe('STYLES', () => {
 
   it('T25: «Экспедиция» и «Атлас» с DEM, «Неон» остаётся плоским', () => {
     const epic = STYLES.epic;
-    expect(tileUrls('epic').some((u) => u.includes('World_Imagery'))).toBe(true);
+    expect(epic.mapStyle.sources.imagery).toMatchObject({
+      type: 'raster', tileSize: 256, maxzoom: 14,
+      tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg'],
+    });
     expect(tileUrls('epic').some((u) => u.includes('terrarium'))).toBe(true);
     expect(epic.terrain?.exaggeration).toBeGreaterThanOrEqual(1.6); // заметная глубина (V3)
     expect(epic.mapStyle.terrain?.exaggeration).toBe(epic.terrain?.exaggeration);
@@ -79,8 +82,19 @@ describe('STYLES', () => {
     expect(STYLES.atlas.attribution).toContain('OpenFreeMap © OpenMapTiles Data from OpenStreetMap');
     expect(STYLES.atlas.attribution).toContain('Terrain Tiles on AWS');
     expect(STYLES.atlas.attribution).not.toMatch(/Esri/);
-    expect(STYLES.epic.attribution).toContain('Esri, Vantor, Earthstar Geographics, GIS User Community');
+    const eox = 'EOxCloudless 2016 https://cloudless.eox.at by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016 & 2017), CC BY 4.0 https://creativecommons.org/licenses/by/4.0/, цвет изменён';
+    expect(STYLES.epic.attribution).toBe(`${eox} · OpenFreeMap © OpenMapTiles Data from OpenStreetMap · Terrain Tiles on AWS (SRTM, USGS, NOAA, Copernicus EU-DEM)`);
+    expect(STYLES.epic.mapStyle.sources.imagery).toMatchObject({ attribution: eox });
     expect(STYLES.epic.attribution).toContain('Terrain Tiles on AWS');
+    expect(STYLES.atlas.attribution).toContain('Copernicus EU-DEM');
+  });
+
+  it('ни один стиль не обращается к arcgisonline или esri', () => {
+    for (const id of STYLE_IDS) {
+      expect(tileUrls(id).join(' ')).not.toMatch(/arcgisonline|esri/i);
+      expect(JSON.stringify(mapStyleFor(id, 2, true).sources)).not.toMatch(/arcgisonline|esri/i);
+    }
+    expect(stylesSource).not.toMatch(/arcgisonline|esri/i);
   });
 
   it('у каждого стиля свои палитра, шрифтовая иерархия и атрибуция; кадры различимы по цвету линии', () => {

@@ -253,7 +253,7 @@ export async function loadWaypointSample(store: Store, opts: { chapters?: boolea
 /**
  * Сводка одной строкой: «6 601 км · 70 дней · 4 676 точек». Дни — только если в файле есть время.
  * У реконструкции (пример) дни расчётные, а не записанные: «70 дней · расчётно».
- * У меток нет километража и дней поездки: «33 метки · 29 мест ночёвок».
+ * У меток нет километража и дней поездки: «33 метки · 29 мест ночёвки».
  */
 export function summaryLine(route: Route, reconstruction: boolean): string {
   const facts = isWaypoints(route) ? journeyFacts(route) : null;

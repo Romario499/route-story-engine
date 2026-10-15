@@ -16,6 +16,8 @@ const enPlural = (n: number, one: string, many: string) => (Math.abs(n) === 1 ? 
 const num = (v: Vars) => Number(v.n ?? 0);
 
 export const RU = {
+  'attribution.colourAdjusted': 'цвет изменён',
+  'attribution.data': 'данные',
   'film.recorded': 'GPS-линия из файла',
   'film.reconstruction': 'Линия из файла · реконструкция',
   'film.marks': 'Географические метки',
@@ -111,13 +113,15 @@ export const RU = {
   /** Предположение по меткам (шаг между ночёвками), не факт. */
   'transport.unicycle': 'Уницикл · предположительно',
   'transport.unknown': 'Способ неизвестен',
-  'summary.overnightPlaces': (v: Vars) => ruPlural(num(v), ['место ночёвок', 'места ночёвок', 'мест ночёвок']),
+  'summary.overnightPlaces': (v: Vars) => ruPlural(num(v), ['место ночёвки', 'места ночёвки', 'мест ночёвки']),
   'summary.nights': (v: Vars) => ruPlural(num(v), ['ночёвка', 'ночёвки', 'ночёвок']), // legacy; кадр по меткам этот ключ не использует
 } satisfies Record<string, Message>;
 
 export type OverlayKey = keyof typeof RU;
 
 export const EN: Record<OverlayKey, Message> = {
+  'attribution.colourAdjusted': 'colour adjusted',
+  'attribution.data': 'data',
   'film.recorded': 'GPS line from file',
   'film.reconstruction': 'Line from file · reconstruction',
   'film.marks': 'Geographic bookmarks',

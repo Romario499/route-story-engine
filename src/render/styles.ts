@@ -1,5 +1,5 @@
 // Три визуальных стиля ролика. Подложки — только открытые тайлы без ключей (R34i):
-//   Esri World Imagery (спутник, только «Экспедиция»), AWS Terrain Tiles / terrarium (рельеф «Экспедиции», отмывка «Атласа»),
+//   EOxCloudless 2016 (спутник CC BY 4.0, только «Экспедиция»), AWS Terrain Tiles / terrarium (рельеф «Экспедиции», отмывка «Атласа»),
 //   OpenFreeMap (векторные тайлы OpenStreetMap, без ключа и без подписей) — на них «Атлас» и «Неон» рисуют свою карту.
 //   ОТКЛОНЕНИЕ ОТ СПЕЦИФИКАЦИИ: растровые CARTO dark/light_nolabels больше не отдаются без ключа — на каждом
 //   тайле водяной знак «API KEY REQUIRED» (проверено 2026-10-09), поэтому вместо них — OpenFreeMap.
@@ -9,6 +9,7 @@
 // Их читают track.ts (линия, маркеры), scene.ts (тон), overlay.ts (палитра, шрифты) и UI (миниатюра, названия).
 import type { FilterSpecification, StyleSpecification } from 'maplibre-gl';
 import type { ChapterMood, ChapterMoodState, InfoKey, StyleId } from '../types';
+import { t } from '../i18n';
 import { FONT_FAMILIES } from './fonts';
 
 /** Шаг общего тона кадра: заливка цветом с режимом наложения поверх подложки, до трека. */
@@ -90,13 +91,13 @@ export interface StyleDef {
   thumb: string;
 }
 
-const ESRI_IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+const EOX_IMAGERY = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg';
 const TERRARIUM = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
 const OPENFREEMAP = 'https://tiles.openfreemap.org/planet';
 // Тексты атрибуции — точные формулировки источников (ADR 0008); имена провайдеров — латиницей в RU и EN.
 const OFM_ATTRIBUTION = 'OpenFreeMap © OpenMapTiles Data from OpenStreetMap';
-const AWS_ATTRIBUTION = 'Terrain Tiles on AWS (SRTM, USGS, NOAA)';
-const ESRI_IMAGERY_ATTRIBUTION = 'Esri, Vantor, Earthstar Geographics, GIS User Community';
+const AWS_ATTRIBUTION = 'Terrain Tiles on AWS (SRTM, USGS, NOAA, Copernicus EU-DEM)';
+const EOX_IMAGERY_ATTRIBUTION = `EOxCloudless 2016 https://cloudless.eox.at by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016 & 2017), CC BY 4.0 https://creativecommons.org/licenses/by/4.0/, ${t('ru', 'attribution.colourAdjusted')}`;
 
 type Expr = unknown[];
 
@@ -215,8 +216,8 @@ export const STYLES: Record<StyleId, StyleDef> = {
       sources: {
         ofm: { type: 'vector', url: OPENFREEMAP, attribution: OFM_ATTRIBUTION },
         imagery: {
-          type: 'raster', tiles: [ESRI_IMAGERY], tileSize: 256, maxzoom: 19,
-          attribution: ESRI_IMAGERY_ATTRIBUTION,
+          type: 'raster', tiles: [EOX_IMAGERY], tileSize: 256, maxzoom: 14,
+          attribution: EOX_IMAGERY_ATTRIBUTION,
         },
         dem: {
           type: 'raster-dem', tiles: [TERRARIUM], tileSize: 256, maxzoom: 14, encoding: 'terrarium',
@@ -229,7 +230,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
         {
           // сниженная насыщенность и приглушённые светлые земли; тени и тёплый свет подтягивает общий тон сцены
           id: 'imagery', type: 'raster', source: 'imagery',
-          paint: { 'raster-saturation': -0.15, 'raster-contrast': 0.15, 'raster-brightness-max': 0.92, 'raster-fade-duration': 0 },
+          paint: { 'raster-saturation': -0.25, 'raster-contrast': 0.10, 'raster-brightness-max': 0.94, 'raster-opacity': 0.88, 'raster-fade-duration': 0 },
         },
         {
           // отмывка под тёплый свет слева сверху: объём рельефа читается и на общем плане, где наклона нет
@@ -290,7 +291,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
       grain: 0,
       haze: { rgb: '150,172,204', height: 0.3, strength: 0.34 },
     },
-    attribution: `${ESRI_IMAGERY_ATTRIBUTION} · ${OFM_ATTRIBUTION} · ${AWS_ATTRIBUTION}`,
+    attribution: `${EOX_IMAGERY_ATTRIBUTION} · ${OFM_ATTRIBUTION} · ${AWS_ATTRIBUTION}`,
     swatchCss: swatch('linear-gradient(160deg,#0B1526 0%,#2c3a40 40%,#7a6a4c 72%,#c2a97c 100%)', EXPEDITION.line, EXPEDITION.line, 4),
     thumb: './style-thumbs/epic.webp',
   },
@@ -365,7 +366,7 @@ export const STYLES: Record<StyleId, StyleDef> = {
         borderCountry: { color: ATLAS.border, opacity: 1, width: [0.9, 1.8], dash: [4, 1.5] },
         borderRegion: { color: ATLAS.border, opacity: 0.55 },
       }, [
-        // отмывка из AWS Terrain (вместо Esri Shaded Relief): тихий тёплый рельеф под водой и дорогами
+        // отмывка из AWS Terrain: тихий тёплый рельеф под водой и дорогами
         {
           id: 'relief', type: 'hillshade', source: 'relief',
           paint: {
