@@ -5,6 +5,8 @@ import { timelineOptionsFor } from '../../src/render/layout';
 import { enrichmentFor, lineRoute, settings, T0 } from './fixtures';
 
 // Эталон снят до изменения камеры меток: все поля каждого кадра, включая титры и итог.
+// Числа округляются до 12 значащих цифр: Windows и Linux расходятся в последнем бите float (CI на Linux).
+const round = (_key: string, v: unknown) => (typeof v === 'number' ? Number(v.toPrecision(12)) : v);
 for (const format of ['9:16', '16:9'] as const) {
   for (const cinematic of [false, true]) {
     for (const timed of [false, true]) {
@@ -13,7 +15,7 @@ for (const format of ['9:16', '16:9'] as const) {
         const timeline = buildTimeline(route, enrichmentFor(route), settings({ format, durationSec: 60 }),
           cinematic ? timelineOptionsFor(format, 'epic') : {});
         const frames = Array.from({ length: 1801 }, (_, i) => timeline.frameAt(i / 30));
-        expect(createHash('sha256').update(new TextEncoder().encode(JSON.stringify(frames))).digest('hex')).toMatchSnapshot();
+        expect(createHash('sha256').update(new TextEncoder().encode(JSON.stringify(frames, round))).digest('hex')).toMatchSnapshot();
       });
     }
   }

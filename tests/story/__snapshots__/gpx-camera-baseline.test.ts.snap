@@ -1,17 +1,17 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`GPX baseline: 9:16, cinematic=false, time=false 1`] = `"035fc41d03ca905330cde82df90fa36338ace8de23010fa28129536d0e985e45"`;
+exports[`GPX baseline: 9:16, cinematic=false, time=false 1`] = `"822f19bc7c98d14da9d3b50646940d1847db2089a35a11b821e954d50ea06f68"`;
 
-exports[`GPX baseline: 9:16, cinematic=false, time=true 1`] = `"97f1cce70172574c53dbca67abf38c73334d4a0dbbad8cc8ff8abb027f83da70"`;
+exports[`GPX baseline: 9:16, cinematic=false, time=true 1`] = `"df6d00f46da07ef4ef6c01880159fe005932f3f81ad6bdcad57b6d3461f01e0e"`;
 
-exports[`GPX baseline: 9:16, cinematic=true, time=false 1`] = `"911dc1518b967379010699c5f6a38b177f77731db2df8b48a2033bfff531088f"`;
+exports[`GPX baseline: 9:16, cinematic=true, time=false 1`] = `"db2eaf405051ec2105853cc0c11171c16ea0da2bcc6ccd1a640c67dd07d5efc2"`;
 
-exports[`GPX baseline: 9:16, cinematic=true, time=true 1`] = `"2ba96cd988c88bee100ab9cf8b1d7b82dbb91e32ce95f1934d42a24cef548db1"`;
+exports[`GPX baseline: 9:16, cinematic=true, time=true 1`] = `"018fac6146b159b5f14c299e476a19af14de8e07f19c50ca6fdca0dcf71a503d"`;
 
-exports[`GPX baseline: 16:9, cinematic=false, time=false 1`] = `"8b5b70a115c44814e9eb1949c6801894969da615cf463495c8eaed3be5a040b7"`;
+exports[`GPX baseline: 16:9, cinematic=false, time=false 1`] = `"a284cf8d3e6df6b9908533842d304572e2b3cbe44328044f12ec4a1535f14a94"`;
 
-exports[`GPX baseline: 16:9, cinematic=false, time=true 1`] = `"d8152868bed45f013e38038dcedf2c91b223c0ca942eb89acadd8c583b50e169"`;
+exports[`GPX baseline: 16:9, cinematic=false, time=true 1`] = `"62626bf0d90108c1862cad6fa90bfcad65a3e7983a3ea56673f080d0f2d4d955"`;
 
-exports[`GPX baseline: 16:9, cinematic=true, time=false 1`] = `"501579f32fc4182de19ed97f654cf6e94c1b6c0a3096a1aab9e568d5c3525e78"`;
+exports[`GPX baseline: 16:9, cinematic=true, time=false 1`] = `"b9b591778c0f53cb0ef2c9019884a5e703ed1b7fe5d8053d87aaa3d53427a51d"`;
 
-exports[`GPX baseline: 16:9, cinematic=true, time=true 1`] = `"bd4504678f204cb88863daa7f92b8e560bf0037c6c528f8fe62e6d40bd98eda6"`;
+exports[`GPX baseline: 16:9, cinematic=true, time=true 1`] = `"d7587e1ce8d1698609995e69a5e4e9a7e05cf9d51431267607bc2c981df76c10"`;
