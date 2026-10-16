@@ -8,8 +8,8 @@
 **ROUTE → STYLE → REPLAY → EXPORT**
 
 [![Live demo](https://img.shields.io/badge/Live_demo-открыть-f5a524?style=for-the-badge)](https://romario499.github.io/route-story-engine/)
-[![Ролик 16:9](https://img.shields.io/badge/Ролик-16:9-1f2937?style=for-the-badge)](exports/submission/route-story-16x9.mp4)
-[![Ролик 9:16](https://img.shields.io/badge/Ролик-9:16-1f2937?style=for-the-badge)](exports/submission/route-story-9x16.mp4)
+[![Ролик 16:9](https://img.shields.io/badge/Ролик-16:9-1f2937?style=for-the-badge)](exports/submission/route-story-final-16x9.mp4)
+[![Ролик 9:16](https://img.shields.io/badge/Ролик-9:16-1f2937?style=for-the-badge)](exports/submission/route-story-final-9x16.mp4)
 
 [![Deploy](https://github.com/Romario499/route-story-engine/actions/workflows/deploy.yml/badge.svg)](https://github.com/Romario499/route-story-engine/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -31,8 +31,8 @@
 
 <table>
 <tr>
-<td width="68%" align="center"><a href="exports/submission/route-story-16x9.mp4"><img src="docs/assets/poster-16x9.jpg" alt="Ролик 16:9 — открыть MP4"></a><br><b>16:9 · 1920×1080 · 60 с</b> — <a href="exports/submission/route-story-16x9.mp4">MP4</a></td>
-<td width="32%" align="center"><a href="exports/submission/route-story-9x16.mp4"><img src="docs/assets/poster-9x16.jpg" alt="Ролик 9:16 — открыть MP4"></a><br><b>9:16 · 1080×1920 · 60 с</b> — <a href="exports/submission/route-story-9x16.mp4">MP4</a></td>
+<td width="68%" align="center"><a href="exports/submission/route-story-final-16x9.mp4"><img src="docs/assets/poster-16x9.jpg" alt="Ролик 16:9 — открыть MP4"></a><br><b>16:9 · 1920×1080 · 60 с</b> — <a href="exports/submission/route-story-final-16x9.mp4">MP4</a></td>
+<td width="32%" align="center"><a href="exports/submission/route-story-final-9x16.mp4"><img src="docs/assets/poster-9x16.jpg" alt="Ролик 9:16 — открыть MP4"></a><br><b>9:16 · 1080×1920 · 60 с</b> — <a href="exports/submission/route-story-final-9x16.mp4">MP4</a></td>
 </tr>
 </table>
 
